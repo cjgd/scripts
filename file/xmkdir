@@ -1,0 +1,152 @@
+#! /bin/sh
+
+# xmkdir
+# $Id: xmkdir,v 1.2 1998/07/10 19:17:15 cdua Exp cdua $
+# Carlos Duarte, 960905/960910
+
+USAGE="\
+usage: $0 [-hn] paths... 
+
+  -h      this help
+  -n      no op
+  -v      write mkdir commands, as they are executed
+  -1      use method 1
+  -2      use method 2
+  -3      use method 3
+
+Create a directory and all necessary sub-dirs to make it. 
+"
+
+method=-1
+VERBOSE=
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	prog=cat ;;
+	x-v)	VERBOSE='\&\& echo "mkdir \1"' ;;
+	x-[123])	
+		method=$1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+echo $* | tr \  \\012 | {
+
+	case $method in
+		-1) sed -n '
+
+			s/\/\/*/\//g
+			s/\/$//
+
+			h
+			bb
+ 
+			:a
+			G
+			h
+			s/\n.*//
+			tb
+			:b
+			s/\/[^/][^/]*$//
+			/./!bd
+			ta
+ 
+			:d
+			g
+
+			s/$/\
+/
+			s/\([^\
+]*\)\n/test -d \1 || { mkdir \1 '"${VERBOSE}"'; }\
+/g
+			s/.$//
+			p
+
+		' 
+
+		;;
+
+		-2) sed -n '
+
+			s/\/\/*/\//g
+			s/\/$//
+
+			h
+			tb
+			bb
+			:a
+			H
+			:b
+			s/\/[^/][^/]*$//
+			/./!bd
+			ta
+			:d
+			tb
+
+			g
+			p
+
+		' | sed -n '
+
+			s/\(.*\)/test -d & || { mkdir & '"${VERBOSE}"'; }/
+
+			1{h;b;}
+			G;h
+			${x;p;}
+
+		' 
+
+		;;
+
+		-3) sed -n '
+
+			s/\/\/*/\//g
+			s/\/$//
+
+			/^\//!bb
+
+			s/\// /g
+			s/^ /\//
+			bc
+
+			:b
+			s/\// /g
+
+			:c
+
+			h
+
+			i\
+pushd . >/dev/null
+
+			:d
+			g
+			s/ .*//
+			x
+			s/[^ ]* \?//
+			x
+
+			/./!be
+
+			s/.*/cd & 2>\/dev\/null || { mkdir & \&\& cd & \&\& echo mkdir &; }/p
+
+			bd
+
+			:e
+			i\
+popd >/dev/null
+
+
+		'
+
+		;;
+	esac
+
+} | ${prog-sh}

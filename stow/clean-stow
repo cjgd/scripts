@@ -1,0 +1,23 @@
+#! /bin/sh
+
+# $Id: clean-stow,v 1.1 1998/09/08 23:56:40 cdua Exp cdua $
+# Carlos Duarte, 970930
+
+LD_ZLIB_DISABLE=on
+export LD_ZLIB_DISABLE
+
+target=/usr/local
+case "$1" in -*) echo "usage: $0 [stow_target_dir] (def: $target)"; exit ;; esactest $# -eq 1 && target="$1"
+
+find $target \( -type d -fprint /tmp/d.$$. \) -o \( -type l -print \) \
+  | sed 's:.*:test -e & \|\| rm -fv &:' | sh 
+
+sort -r < /tmp/d.$$. | sed '
+
+/^\.$/d
+/^\.\.$/d
+
+s/.*/test `ls -a1 & | wc -l` -eq 2 \&\& rmdir & \&\& echo &/
+
+'  | sh 
+

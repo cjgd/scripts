@@ -1,0 +1,34 @@
+#! /bin/sh
+
+# comp-order -- reorders filenames for better compression
+# $Id: comp-order,v 1.1 1998/07/09 22:21:58 cdua Exp cdua $
+# Carlos Duarte, 980709
+
+# usage: 
+#   touch x.tar
+#   ./comp-order . ! -type d | xargs tar rf x.tar 
+#   gzip x.tar 
+#
+# sort files according extension first, for better(?) compression
+# filenames may not contain spaces
+# 
+
+find $* -print | awk '
+{
+	sub(/\/*$/, "")
+	dir = $0
+	if (!sub(/\/[^\/]*$/, "", dir)) {
+		# dir, no file, no ext
+		print dir
+		next
+	}
+	ext = file = $0
+	sub(/^.*\//, "", file)
+	if (!sub(/\.[^.]*$/, "", file)) {
+		# file, no ext
+		print dir, file
+		next
+	}
+	sub(/^.*\./, "", ext)
+	print dir, file, ext
+}' | sort +2 +1 +0 | sed -e 's/ /\//' -e 's/ /./' 

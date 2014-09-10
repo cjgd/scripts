@@ -1,0 +1,49 @@
+#! /bin/sh
+
+# h-grep -- "highlight" grep 
+# $Id: h-grep,v 1.1 1998/09/06 23:15:04 cdua Exp cdua $
+# Carlos Duarte, 980710
+
+L="<"
+R=">"
+USAGE="\
+usage: $0 [-h] [-1..9] pattern [files...]
+
+  -h      this help
+  -l      left string for highlight pattern (def: '$L')
+  -r      left string for highlight pattern (def: '$R')
+  -w      treat pattern as a word
+  -1 .. -9
+	  only searches for #ed occurrence (def: highlightes all)
+  -p      only output lines that match pattern (def: outputs all)
+  -b      enboldens pattern, if possible
+"
+
+G=g
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-l)	shift; L="$1" ;;
+	x-r)	shift; R="$1" ;;
+	x-p)	PP="p;d" ;;
+	x-w)	WL='\<'; WR='\>' ;; 
+	x-b)	L=`tput smso`; R=`tput rmso` ;;
+	x-[1-9])
+		G=`echo x$1 | cut -c3` ;; 
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+PAT="`echo \"$1\"|sed 's:/:\\\\&:g'`"
+shift
+
+sed "s/$WL$PAT$WR/$L&$R/$G$PP" "$@"
+exit
+

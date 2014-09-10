@@ -1,0 +1,66 @@
+#! /bin/sh 
+
+# today-cal -- highlight today date on cal output
+# $Id: today-cal,v 1.1 1998/07/09 02:55:02 cdua Exp cdua $ 
+# Carlos Duarte, 980707
+
+USAGE="\
+usage: $0 [-h] [-b] [left right]
+
+  -h      this help
+  -b      bold, enbolden date
+  -d      debug mode, run through all days
+  left    string used to place on the left of the day
+  right   string used to place on the right of the day
+
+  change cal output in order to highligth current day
+  by default, use [] to delimit day
+
+  eg: 
+    $0 \( \)
+    $0 \< \>
+"
+
+pre='['
+suf=']'
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-d)	DEBUG=on ;;
+	x-b)	pre=" `tput smso`"
+		suf="`tput rmso` "
+		;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+test x"$1" != x && pre="$1"
+test x"$2" != x && suf="$2"
+
+#
+#r! date
+#Tue Jul  7 15:58:24 WEST 1998
+#
+#
+
+cmd='cal | sed "s/.*/ & /; s/ $day /$pre$day$suf/"'
+if test x$DEBUG = xon; then 
+	echo -e '\033[2J'
+	for day in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 \
+	15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31; do 
+		echo -e '\033[1;1H'
+		eval "$cmd"
+	done
+else
+	date | while : ; do
+		read x y day z
+		eval "$cmd"
+	break
+done
+fi
+
+exit 0

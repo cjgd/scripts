@@ -1,0 +1,54 @@
+
+(
+echo '/^exit/+1,$d'
+echo '$a'
+echo ''
+echo '::::::::::'
+echo ''
+sed 's/^/x /' ${1-INDEX} | while read xx; do
+	case $xx in 
+	"x  "*) 
+		test y$p = yy && echo "$xx"; 
+		continue
+		;;
+	esac
+	set -- $xx; 
+	if test -d $2; then 
+		echo "$xx"; 
+		p=y; 
+	fi
+done | cut -c3- 
+echo .
+echo w
+echo q
+) | ed $0 2>/dev/null
+
+exit
+
+::::::::::
+
+awk                     directory for pure awk specific scripts
+calc                    directory for calculations stuff
+files                   directory to keep file related scripts
+                          approximately the same size
+fun                     directory to keep funny stuff, not very useful
+grep                    directory for greping-like stuff
+gzip                    directory for gziping/compressing/archiving stuff
+                          compression
+man                     directory related with man and help files
+                          corresponing man file
+                          directory
+misc                    directory for misc uses (might be useful)
+mtools                  directory to keep stuff that use mtools, or deal
+                          with floppies
+                          leftover space on disk
+net                     directory to keep ***net related scripts
+                          message
+rcs                     directory to keep rcs related scripts
+sed                     directory to keep pure sed scripts
+sh                      directory to keep misc sh scripts
+                          necessarily consecutive)
+stow                    directory to keep stow related scripts
+                        remove all conflicts detected by stow
+                          installs something under stow
+xsed                    directory to keep stuff that deals with sed

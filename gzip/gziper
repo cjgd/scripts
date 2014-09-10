@@ -1,0 +1,50 @@
+#! /bin/sh
+
+# gziper -- only compress files that worth being compressed
+# $Id: gziper,v 1.5 1998/07/09 22:22:56 cdua Exp cdua $
+# Carlos Duarte, 960905/030908
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hngb] [gzip options] dirs files... 
+
+  -h      this help
+  -n      no op
+  -g      use gzip (default)
+  -b      use bzip2
+"
+
+prog=gzip
+cmd='xargs -0 -r ${prog} ${gzip_opt}'
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd='tr \\0 \\n' ;; 	## cmd=cat
+	x-b)	prog=bzip2 ;; 
+	x-g)	prog=gzip ;; 
+	x--)	shift; break ;;
+	x-?)	gzip_opt="$gzip_opt $1" ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+## if _must_ accept on extra argument after options
+#if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+#du -k $* | awk '!/gz$/ { if ($1 > 1) print $2 }' | eval $cmd
+
+find "${@:-.}" \
+	-type f \
+	! -name '*gz' \
+	! -name '.*gz' \
+	! -name '*zip' \
+	! -name '.*zip' \
+	! -name '*Z' \
+	! -name '.*Z' \
+	-size +1k \
+	-print0 | eval $cmd
+
+#exit 0
+exit

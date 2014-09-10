@@ -1,0 +1,50 @@
+#! /bin/sh
+
+# rcsrmdir -- remove RCS dir, and move all ,v file into current dir
+# $Id: rcsrmdir,v 1.1 1998/09/06 23:00:31 cdua Exp cdua $
+# Carlos Duarte, 980711
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hv] dirs...
+
+  -h      this help
+  -v      be verbose
+
+remove RCS dir, and move all ,v files into named dirs
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-v)	VERBOSE=on ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+p=`/bin/pwd`
+for i 
+do
+	cd $p
+	test -d $i || continue
+	cd $i
+	test -d RCS || continue
+
+	f="`ls -a RCS | sed '/^\.$/d; /^\.\.$/d; s:^:RCS/:'`"
+	if test x"$f" != x; then 
+		test x$VERBOSE = xon && echo on dir $i: moving $f \-\> .
+		mv $f . 
+	fi
+	test x$VERBOSE = xon && echo on dir $i: removing dir RCS
+	rmdir RCS
+
+done
+exit

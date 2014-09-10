@@ -1,0 +1,44 @@
+#! /bin/sh
+
+# magic-upd -- adds /etc/magic.local to /etc/magic if necessary
+# $Id: magic-upd,v 1.2 1998/07/12 18:22:21 cdua Exp cdua $
+# Carlos Duarte, 970929/980712
+
+if test $# -ne 0 ; then
+	echo "\
+usage: $0
+  if /etc/magic.local exists and contains new entries
+  not on /etc/magic, then this late is appended, but
+  with care for not having duplicated information
+
+  notes: /etc/magic.local, must start with the line
+      # magic.local ... 
+	 /etc/magic should not have a line like that
+
+	 usually, this is not a problem
+"
+	exit 1
+fi
+
+nothing () {
+	echo Nothing to update.
+	exit 
+}
+
+test -f /etc/magic.local || nothing
+test -f /etc/magic       || nothing
+
+# does test supports -ot -- older than -- operator?
+test /etc/magic -ot /etc/magic.local || nothing
+
+echo Extracting original magic file... 
+sed -n -e '/^# magic\.local/q' -e p < /etc/magic > /tmp/xa.$$.
+
+echo Adding local stuff... 
+cat /etc/magic.local >> /tmp/xa.$$. 
+
+echo Updating new magic file... 
+rm /etc/magic && mv /tmp/xa.$$. /etc/magic
+
+exit
+

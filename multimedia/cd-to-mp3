@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# cd-to-mp3 -- grabs cd audio track to an mp3 file. uses cdparanoia and lame
+# Carlos Duarte <cgd@teleweb.pt>, 000402
+
+if test $# -ne 2; then
+	echo "usage: $0 track_number file_name"
+	echo "   eg: $0 5 raise_your_first.mp3"
+	exit
+fi
+
+track="$1"
+file="$2"
+case $file in 
+*.mp3 | *.MP3 ) ;; 
+*) file="$file.mp3" ;;
+esac
+
+cdparanoia "$track" - | buffer | lame -h - "$file"

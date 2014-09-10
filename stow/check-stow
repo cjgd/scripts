@@ -1,0 +1,19 @@
+#! /bin/sh
+
+# Carlos Duarte, 970831/971110
+# $Id: check-stow,v 1.5 1998/09/08 23:49:54 cdua Exp cdua $
+
+target=/usr/local
+case "$1" in -*) echo "usage: $0 [stow_target_dir] (def: $target)"; exit ;; esac
+test $# -eq 1 && target="$1"
+
+# check only files that do not belong to stow
+find `ls -a1 $target /usr/local|sed '/^\.$/d; /^\.\.$/d; /^stow$/d; s/^/.\//'` \
+        ! -type d \
+	! -type l \
+	! -regex './man/cat./.*' \
+	! -path './man/whatis' \
+	! -path './var/locatedb' \
+	-print
+
+exit

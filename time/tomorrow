@@ -1,0 +1,154 @@
+#! /bin/sh
+
+# tomorrow -- shows tomorrows day, weekday, ... 
+# $Id: tomorrow,v 1.1 1998/09/06 16:47:30 cdua Exp cdua $
+# Carlos Duarte, 980722
+
+# Wed Jul 22 22:23:34 WEST 1998
+
+# tomorrow -[wd] +/-offset, -w for weeks, -d for days, 
+# +/-offset to add to current date
+
+USAGE="\
+usage: $0 [-h] [-wd] [+offset] [-offset]
+
+  -h      this help
+  -w      print only week days (default: print both)
+  -d      print only month days (default: print both)
+  +offset use current day, plus offset days
+  -offset use current day, minus offset days
+"
+
+off=00
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-w)	WHAT=w ;;
+	x-d)	WHAT=d ;;
+	x-[0-9]*)
+		off="$off - `echo $1|cut -c2-`"
+		off=`expr $off`
+		;;
+	x+[0-9]*)
+		off="$off + `echo $1|cut -c2-`"
+		off=`expr $off`
+		;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+test $off = 00 && off=1
+##echo $off; exit; 
+
+# if _must_ accept one extra argument after options
+if test $# -ne 0; then echo "$USAGE"; exit 1; fi
+
+date | awk '
+BEGIN {
+	offset = '$off'
+
+	wnumber["Sun"] = 0
+	wnumber["Mon"] = 1
+	wnumber["Tue"] = 2
+	wnumber["Wed"] = 3
+	wnumber["Thu"] = 4
+	wnumber["Fri"] = 5
+	wnumber["Sat"] = 6
+
+	wname[0] = "Sunday"; 
+	wname[1] = "Monday"; 
+	wname[2] = "Tuesday"; 
+	wname[3] = "Wednesday"; 
+	wname[4] = "Thursday"; 
+	wname[5] = "Friday"; 
+	wname[6] = "Saturday"; 
+
+	mon_len[0] = 31
+	mon_len[1] = 28
+	mon_len[2] = 31
+	mon_len[3] = 30
+	mon_len[4] = 31
+	mon_len[5] = 30
+	mon_len[6] = 31
+	mon_len[7] = 31
+	mon_len[8] = 30
+	mon_len[9] = 31
+	mon_len[10] = 30
+	mon_len[11] = 31
+
+	mon_number["Jan"] = 0
+	mon_number["Feb"] = 1
+	mon_number["Mar"] = 2
+	mon_number["Apr"] = 3
+	mon_number["May"] = 4
+	mon_number["Jun"] = 5
+	mon_number["Jul"] = 6
+	mon_number["Aug"] = 7
+	mon_number["Sep"] = 8
+	mon_number["Oct"] = 9
+	mon_number["Nov"] = 10
+	mon_number["Dec"] = 11
+
+	mon_name[0] = "Jan"
+	mon_name[1] = "Feb"
+	mon_name[2] = "Mar"
+	mon_name[3] = "Apr"
+	mon_name[4] = "May"
+	mon_name[5] = "Jun"
+	mon_name[6] = "Jul"
+	mon_name[7] = "Aug"
+	mon_name[8] = "Sep"
+	mon_name[9] = "Oct"
+	mon_name[10] = "Nov"
+	mon_name[11] = "Dec"
+}
+
+function fixfeb(y) {
+	mon_len[1]=28
+	if (y%400 == 0 || (y%100 != 0 && y%4 == 0))
+		mon_len[1]++
+}
+
+{
+	y = $NF
+	fixfeb(y)
+	m = mon_number[$2]
+	d = $3 + offset
+	while (d<1) {
+		if (--m<0) {
+			y--
+			fixfeb(y)
+			m=11
+		}
+		d += mon_len[m]
+	}
+	while (d>mon_len[m]) {
+		d -= mon_len[m]
+		if (++m > 11) {
+			y++
+			fixfeb(y)
+			m=0
+		}
+	}
+	printf "%s, ", wname[(wnumber[$1]+offset+70000)%7]
+	printf "%d %s %d\n", d, mon_name[m], y
+}' | while read x y; do
+
+# receives: Saturday, 18 Dec 1999
+	case X$WHAT in
+	Xw)
+		echo $x | sed 's/.$//'
+		;;
+	Xd)
+		echo $y
+		;;
+	*)
+		echo $x $y
+		;;
+	esac
+done
+exit

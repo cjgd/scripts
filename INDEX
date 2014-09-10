@@ -1,0 +1,317 @@
+Common.mk               common portion of all makefiles
+DIR-INDEX               summary of this index, that contains only
+                          directories descriptions
+INDEX                   this index
+Mk-dist
+README
+admin                   DIR: administration stuff
+admin/apm-check.pl
+admin/arpwatch-logview
+admin/exe-strip.pl      strip executables, if not done already
+admin/free.awk          query memory on a linux system
+admin/fs-change-quota   change quotas on a flesystem
+admin/ldd-check         performs checks on ldd output
+admin/ldd.sh            find share lib deps
+admin/sendmail.restart  restarts sendmail ...
+admin/shared-sym        fix symlinks of shared libs
+calc                    DIR: calculations, math
+calc/factorial          computes factorial
+calc/pow2               computes powers of 2
+calc/primes             computes prime numbers
+calc/primes.awk         output primes
+calc/primes_ii.awk      generate prime numbers
+cdr
+cdr/burn-dvd.sh
+cdr/cdburn.sh
+cdr/cdsize.sh
+convert                 DIR: converting something to something else
+convert/dos2unix.pl     convert a CRLF line ended filename to a LF one
+convert/dtou.sed        convert a format CRLF to LF form of newline
+convert/fr_roman.sed    from roman (to decimal)
+convert/from_roman.sed  output bc(1) code that convert roman to decimal
+convert/fromdos         convert msdos EOL to unix
+convert/t2c.sed         converts text, to C strings
+convert/t2html.sed      quotes text, into html format
+convert/t2roff.sed      changes text, for inclusion on roff documents
+convert/to_roman.sed    converts decimal to roman
+convert/unquote-printable.pl
+                        convert =XX quote, to its 8 bit representation
+convert/utod.sed        convert LF to CRLF on a unix box
+cvs
+cvs/cvsdaemon.pl
+cvs/nontags-cvs.sh
+devel                   DIR: useful when doing development
+devel/any2c.pl
+devel/chop-c-comments.pl
+                        remove blocks of C comments
+devel/del-c-cmnt.awk    delete comments on C code
+devel/del-c-cmnt.sed    remove all comments on C code
+devel/del-sh-cmnt.sed   delete all comments from a SH file
+devel/m4conv.pl
+devel/make-targets.sed  tries to catch all targets on a Makefile
+devel/mk
+devel/rev-byte.awk      print reversed bytes in binary...
+file                    DIR: file name and directories scripts
+file/copy-latest.sh
+file/dir-diff
+file/dos-fn             convert long filenames to 8.3 restriction
+file/dos-fn.pl
+file/empty-dirs.pl      find empty dirs
+file/empty-dirs.py
+file/fbasename.sed      strip directory component from paths
+file/fdirname.sed       dirname applied on an input of filenames
+file/file-date.pl       date of a given file
+file/flatten.pl
+file/fn-generate        generate file names
+file/fnspaces           replace spaces on file names
+file/hdtosym            convert hard links to symlinks
+file/ls-dup.awk         find duplicated names within first few characters
+file/ls-today           list today files
+file/move-to-lower      rename files to lower/upper case...
+file/mvdir              move whole directories
+file/perms.sed
+file/rel2abs            convert relative symlinks to absolute ones
+file/remove-binfiles.pl remove all non-text files recursively
+file/rename-to-type
+file/rename.pl
+file/rename.py
+file/renamer.pl         rename files
+file/split-big-dir      split a big dir, into several of approx same size
+file/symtohd            convert symlinks to hard links
+file/tolower.awk        convert input file names into lower case
+file/tolower.sed        convert file names to lower case...
+file/toupper.awk        convert input file names into upper case
+file/toupper.sed        convert file names to upper case...
+file/wipe-dirs          remove recursively empty directories
+file/wipe-links         remove stale symbolic links
+file/xmkdir             create a directory, makeing hierarquy if needed
+fun                     DIR: fun and amusing stuff
+fun/ghanoi.sed          a "graphical" implementation of hanoi game, in sed!
+fun/hanoi-pp.awk        hanoi pretty print, transform "move from x to y"
+                          into moves
+fun/hanoi.awk           generate hanoi moves
+fun/month               display current month
+fun/month-hard-way      show current month on hairy ways...
+fun/small-wbanner       display banner contents on a wide fashion
+fun/wbanner             wide banner: rotate banner output 90 degrees.
+grep                    DIR: grepping, searching
+grep/dgrep              perform a delimeted grep
+grep/h-grep             "highlight" grep
+grep/text-grep          perform grep on text files
+grep/ul-grep            underline grep
+gzip                    DIR: gziping/compressing/archiving
+gzip/anytolz
+gzip/comp-order         reorders filenames for better compression
+gzip/grep-zip-entry
+gzip/gunziper           gunzip files and directories recursively
+gzip/gziper             only compress files that worth being compressed
+gzip/gztobz2
+gzip/untar              unpack several archives files
+gzip/xarj               decompresses several arj archive, and support
+                          multivolume ones
+gzip/zblow              blows compressed stuff to stdout
+java
+java/check
+java/class-version.pl
+man                     DIR: man, help, info related scripts
+man/cmp-info            compare output of two (gnu)info files
+man/fake-cats           see if there are any cat page, without the
+                          corresponding man
+man/ln-care             take care of hard linked files
+man/so-care             take care of .so files
+misc                    DIR: directory for misc uses (might be useful)
+misc/adjdata            works on /etc/adjtime data, used by clock(8) [linux]
+misc/check-mail         checks if user received mail
+misc/comp-info          compress info files on system
+misc/comp-man           compress man pages
+misc/magic-upd
+misc/man                poor man's implementation of man(1)
+misc/optimize-make      edit makefiles, and change CFLAGS, by removing
+                          debugging flags options
+misc/t-update           enshortens big termcap/terminfo files, by selecting
+                          some terms only
+misc/term-names
+misc/vmstat-custom      customization for vmstat(8) [linux]
+mozilla
+mozilla/about_cache.pl
+mozilla/ff
+mozilla/ff-proxy
+mozilla/get-runnning-netscape
+mozilla/netscape-cache.pl
+mozilla/tb
+mtools                  DIR: mtools wrappers, or floppies related in general
+mtools/fromdisks        copy files several disks into separated directories
+mtools/mdirs            recursive mtools directory list, front end to mdir
+mtools/xcopy            copy files to multiple disks
+multimedia
+multimedia/any-to-au
+multimedia/cd-to-mp3
+multimedia/img-play.pl
+multimedia/jpg-opt.pl
+multimedia/sound-play.pl
+net                     DIR: ***net related scripts
+net/downloader
+net/ftpget              get files from ftp site
+net/ip-conv.pl
+net/ppost               process quoted messages (as in replying mail ou news)
+net/suck-massage.pl
+net/tin-batch-save
+net/tin-unread-log.pl
+net/usenet-handle       an attempt to canonify the names of faqs, howtos, etc...
+probe                   DIR: probing the system for that feature
+probe/cmd-sel           selects the path for a given command
+probe/echo              defines a function that echoes without a trailing
+                          newline
+probe/get-ptys          get all well known ptys available on /dev
+probe/ls-l-size         output field number (1 based) of ls -l output, that
+                          contains file size
+probe/max-arg-len
+rcs-utils               DIR: rcs related scripts
+rcs-utils/makediffs     create a shell script to recreate dir2, given dir1
+rcs-utils/mkpatch       make patch file, for transforming xx.orig into xx
+rcs-utils/rcscmp        check what files differ from latest RCS version
+rcs-utils/rcsextra      check for files being revisioned, that doesnt exist
+rcs-utils/rcsmiss       check for files not being revisioned
+rcs-utils/rcsmove.pl    move source-files and theirs ,v if any, into other dir
+rcs-utils/rcsmvdir      move ,v files into RCS directory
+rcs-utils/rcsrmdir      remove RCS dir, and move all ,v file into current dir
+rcs-utils/rcsupdate     updates rcs files
+redhat                  DIR: scripts for use on a redhat system
+redhat/fix-path         fix path on redhat startup scripts, to
+                          include /usr/local/bin
+redhat/fix-pcmcia-rc    rename S45pcmcia to S09pcmcia, in order to run
+                          BEFORE network
+redhat/rpm-size         get size of a rpm package
+roff                    DIR: scripts for use when preparing roff documents
+roff/soelim.sed         produce sh(1) commands that do a soelim
+search
+search/mkfiledb.pl
+search/search.c
+sed                     DIR: sed related stuff (wrappers, etc...)
+sed/apply-sed           apply sed to each input line, replacing it per result
+sed/s2cmdl.sed          converts a sed script (like this) to a (one-line)
+                          command
+stow                    DIR: stow related scripts
+stow/check-stow         check for files not under stow
+stow/clean-stow         remove stale symlinks and empty dirs
+stow/ld-conf-stow       run ldconfig on each lib under stow
+stow/make-install       gross hack to run make install
+stow/remove-stow-conflicts
+                        remove all conflicts detected by stow, but that are
+stow/to-stow            work on 'make -n' output to produce proper
+                          commands to install
+stow/update-stow        run stow automatically
+svn
+svn/svn-ls-v-sum.sh
+svn/svn-recheckout.sh
+sw-knife                DIR: swiss army knife: using perl for emulating some
+                          unix cmds
+sw-knife/fmt.pl         a simple perl based formatter
+sw-knife/fmt2.pl        a simple perl based (classical) formatter
+sw-knife/fmt3.pl        yet another perl fmt(1)
+sw-knife/grep-w.pl      emulation of grep -w
+sw-knife/ls-l.pl        do a 'ls -l' in perl
+sw-knife/sleep.pl       sleep with micro seconds
+sw-knife/uudecode.pl    uudecode written in perl
+sw-knife/uuencode.pl    uuencode written in perl
+sw-knife/who.pl         emulates who, if utmp has this structure
+text                    DIR: to apply on (contents of) text files
+text/cat-b.sed          number nonblanks lines
+text/cat-n.sed          number input lines
+text/cat-s.awk
+text/cat-s.sed          squeezes out all consecutive blank lines into
+                          a single blank
+text/catn.awk           display files preceded by count
+text/catter.py
+text/center.awk         center lines
+text/center.sed         centers lines
+text/center_ii.sed      centers lines
+text/column.awk         print input lines with columns aligned
+text/crlf.py
+text/dotify.sed
+text/double-space.sed   add a blank after each line
+text/expand.sed         expand tabs into spaces (tabs stop = 8)
+text/fmt.sed            format text such as each line gets below 40 chars
+text/head.sed           print first few lines of input
+text/justify.sed
+text/length.awk         output each line, preceded per its length
+text/rand-char.awk      output a random char from each line of input
+text/rand-line.awk      output a random line from input
+text/rand-line.pl       outputs N random lines from input
+text/rev-chars.sed      reverse all chars of each line, keep line ordering
+text/rev-lines.sed      reverse all lines of input, i.e. first line
+                          become last, ...
+text/shuffle-lines.awk  output all input lines on random order
+text/shuffle.awk        output all input lines on random order
+text/shuffle.pl         randomizes input lines
+text/sort.sed           implementing selection sort with sed
+text/stable-uniq        remove duped lines, but keep their order
+text/strings.py
+text/tail.awk           display last ten lines of input
+text/tail.sed           display last ten lines of a file
+text/unexpand.sed       convert sequences of spaces to tabs, if can
+text/unify.awk          output only distinct lines, per order of appearance
+text/uniq-d.sed         print all duplicated uniq lines on a sorted input
+text/uniq-u.sed         uniq lines on a sorted input
+text/uniq.sed           uniq
+text/wc-c.sed           count chars
+text/wc-l.sed           count lines of input, kind of `wc -l'
+text/wc-w.sed           count words
+text/wc.awk             emulate unix wc, very crude
+time                    DIR: time, dates, calendars
+time/date-adjust-one-hour-less.sh
+time/month.awk          print current month, like cal
+time/sleep-to           sleep until a given hour
+time/time-cmd           measure the time taken by a given command
+time/today-cal          highlight today date on cal output
+time/tomorrow           shows tomorrows day, weekday, ...
+utils                   DIR: misc utilities, unsorted
+utils/apply-conv.pl     apply conversions to files
+utils/caesar-add.pl     primitive encryptation method
+utils/compact-list.awk
+utils/describe-dir      get a description of kind of file on current dir
+utils/dupexe            check duped files on path
+utils/dupfiles          print duplicated files on supplied dirs
+utils/dupinfo           check duped info files
+utils/dupmans           print duped man pages
+utils/edit-index        detect new and obsoleted entries on INDEX files
+utils/find-eq-files     find files that are equal
+utils/find-eq-files.pl  find equal files
+utils/find-eq-files.py
+utils/fortune-query.pl
+utils/gender-pt.awk
+utils/get-desc.pl       obtain the classical "--" beginned description
+                          of each file
+utils/growing           watch the growth rate of given files
+utils/inpath            check if a file is on path
+utils/kill-byname       kill processes by its command line name
+utils/mymirror.pl       # mymirror A B, make minimal operations on B,
+                          such as A=B
+utils/penv              print environ vars only, and not functions
+utils/split.sh          binary split
+utils/tee.awk           implement tee(1) on awk
+utils/tget              get entry from termcap file
+utils/tr-expand.awk     expands tr a-z constructs, sort of...
+utils/waitpid.sh
+utils/xfer-site.cfg     example of a config file for xfer-site.pl
+utils/xfer-site.pl      transfers one dir to another, making changes on
+                          the files
+webservices
+webservices/wsdlcall.py
+words                   DIR: misc operation on words of text files
+words/capit.sed         capitalize words
+words/capit_ii.sed      capitalize words
+words/capit_iii.sed     capitalize words
+words/capit_iv.sed      capitalize words
+words/commas.sed        format a number (or anything else) into xx,xxx,xxx ...
+words/d-word.sed        find consecutive duplicated words on text
+words/freq-char.pl      measure frequency of chars...
+words/list-uniq.awk     normalize a list
+words/pmatch.awk        find patterns
+words/show-duped        output duped entries on specified field
+words/wf                word frequencies
+words/wf.awk            word frequency counter
+xutils                  DIR: utils to apply when running X
+xutils/get-xtitle       obtains title name for current window
+xutils/set-icon-name    sets icon on a xterm compliant terminal
+xutils/x-random-bitmap

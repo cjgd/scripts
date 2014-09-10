@@ -1,0 +1,13 @@
+#! /bin/sh
+
+# ls-today -- list today files
+# $Id: ls-today,v 1.1 1998/07/10 17:08:16 cdua Exp cdua $
+# Carlos Duarte, 980709
+
+# Thu Jul  9 18:16:29 WEST 1998
+# -rw-r--r--   1 cdua     users           0 Jul  9 18:14 x
+
+ls -al $* | egrep \
+" [0-9]+ `date | sed -e 's/^[^ ]* //' -e 's/ *[012][0-9]:.*$//'` [0-9][0-9]+" 
+
+exit

@@ -1,0 +1,73 @@
+#! /bin/sh 
+
+# fs-change-quota -- change quotas on a flesystem
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990209
+
+USAGE="\
+usage: $0 [-hn] [-fs filesystem] from1 to1 [from2 to2 ...]
+
+  -h      this help
+  -n      no op
+  -v      be verbose
+  -fs filesystem
+	  specify filesystem to act on
+
+
+  eg: $0 -n -v 10240 102400
+"
+
+# default filesystem... 
+fs=/www
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	dry_run=yes ;;
+	x-v)	verbose=yes ;;
+	x-fs)	fs="$2" ; shift ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+## if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+if test `expr $# % 2` -ne 0; then echo "$USAGE"; exit 1; fi
+if test "$fs" = ""; then echo "$USAGE"; exit 1; fi
+
+tmp=/tmp/x.$$.
+repquota -e $tmp $fs
+
+awk 'BEGIN {
+'"`while test $# -ne 0; do
+	echo \"x[$1] = $2; \"
+	shift
+	shift
+done`"'
+}
+{
+	print
+	getline
+	if (x[$3]) 
+		$3 = x[$3]
+	print
+}' < $tmp > $tmp.1
+
+if test "$dry_run" != "yes"; then
+	test "$verbose" = yes && echo "doing: edquota -i $tmp.1 ... "
+	edquota -i $tmp.1
+	test "$verbose" = yes && echo "doing: rm -f $tmp $tmp.1 ... "
+	rm -f $tmp $tmp.1
+else
+	cat<<EOF
+Please, take a look at: 
+  $tmp
+        file with original quotas
+  $tmp.1
+	file with future quotas to implement
+EOF
+fi

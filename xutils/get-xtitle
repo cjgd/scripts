@@ -1,0 +1,31 @@
+#! /bin/sh
+
+# get-xtitle --  obtains title name for current window
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990404
+
+# short way: xprop -id $WINDOWID WM_NAME | cut '-d"' -f2
+
+if test `printenv WINDOWID | wc -w` -ne 1; then 
+	echo "Can not obtain window id"
+	exit 1
+fi
+
+# note: xprop escapes \, and " into \\ \", xwininfo don't
+
+exec 2>/dev/null
+t="`xprop -id $WINDOWID WM_NAME`"
+if test "$t" != ""; then 
+	echo "$t" | sed 's/^[^"]*//; s/[^"]*$//; s/^/echo /' | sh 
+	exit
+fi
+
+t="`xwininfo -id $WINDOWID`"
+if test "$t" != ""; then 
+	echo "$t" | sed '/^xwin/!d; s/^[^"]*"//; s/"[^"]*$//'
+	exit
+fi
+
+echo "Can not obtain window title name"
+exit 1
+

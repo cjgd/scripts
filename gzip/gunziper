@@ -1,0 +1,69 @@
+#! /bin/sh 
+
+# gunziper -- gunzip files and directories recursively
+# $Id: gunziper,v 1.6 1998/07/09 22:22:56 cdua Exp cdua $
+# Carlos Duarte, 961005/030908
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hn] [[gzip options] dirs files...
+
+  -h      this help
+  -n      no op
+
+gunzips all files or directories (recursively) specified.
+"
+
+prog=gunzip
+cmd='xargs -r ${prog} ${opts}'
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd=cat ;;
+	x--)	shift; break ;;
+	x-?)	opts="$opts $1" ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+## if _must_ accept on extra argument after options
+#if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+#find "${@:-.}" -type f -print |
+#  grep -e '\.gz$' -e '\.Z$' -e '\.tgz$' |
+#  eval $cmd 
+
+perl -e '
+use strict;
+use File::Find;
+find(\&wanted, qw('"${@:-.}"'));
+
+my (@gz, @bz);
+sub wanted { 
+	/\.gz$/ and 	do { push @gz, $File::Find::name; next }; 
+	/\.tgz$/ and 	do { push @gz, $File::Find::name; next }; 
+	/\.Z$/ and 	do { push @gz, $File::Find::name; next }; 
+	/\.bz2$/ and 	do { push @bz, $File::Find::name; next }; 
+	/\.tbz$/ and 	do { push @bz, $File::Find::name; next }; 
+	/\.tbz2$/ and 	do { push @bz, $File::Find::name; next }; 
+}
+
+if ('\'"$cmd"\'' eq "cat") { # fake mode, just print the names
+	for (@gz) { print ; print "\n"; }
+	for (@bz) { print ; print "\n"; }
+	exit(0); 
+}
+	
+
+@gz != 0 and do {
+	open P, "|xargs -0 gzip -d '"$opts"'" and print P join("\0", @gz) and close P or die $!;
+};
+
+@bz != 0 and do {
+	open P, "|xargs -0 bzip2 -d '"$opts"'" and print P join("\0", @bz) and close P or die $!;
+};'
+
+#exit 0
+exit

@@ -1,0 +1,18 @@
+#! /bin/sh
+
+# get-ptys -- get all well known ptys available on /dev
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990418
+
+
+ls /dev | awk '/^pty/{
+	s = substr($1, 4, 1)
+	p = substr($1, 5, 1)
+	if (!series_cache[s]++) series = series s
+	if (!position_cache[p]++) position = position p
+}
+
+END {
+	printf "series=\"%s\"\n", series
+	printf "position=\"%s\"\n", position
+}'

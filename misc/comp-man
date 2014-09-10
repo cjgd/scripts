@@ -1,0 +1,41 @@
+#! /bin/sh
+
+# comp-man -- compress man pages
+# $Id: comp-man,v 1.4 1998/07/12 18:22:02 cdua Exp cdua $
+# Carlos Duarte, 960902/970425
+
+# usage: comp-man 
+
+#T=/tmp/,lo$$lo,
+#TT=${T}T
+#
+#find /usr/man -type f \! -path /usr/man/cache/"*" | \
+#	egrep -v '\.gz$' | \
+#	xargs egrep '^\.so' | \
+#	sort | \
+#	uniq > $T
+#
+#sed 's/.* //;s/^/\/usr\/man\//' < $T | sort | uniq > $TT
+#
+#echo '\.gz[ 	]*$' >> $TT
+#
+#find /usr/man -type f -size +1k | egrep -vf $TT | xargs gzip -v
+#
+#rm -f $T $TT
+
+for d in `man -w | tr : '\n' | sort -u`; do 
+	test "`echo $d/man*`" = "$d/man*" && continue
+	dirs="$dirs $d" 
+done
+
+if test x"$dirs" = x ; then
+	echo no dirs to compress
+	exit 1
+fi
+
+find $dirs \
+	-type f \
+	-size +1k \
+	! -name "*.gz" \
+	! -name "whatis" \
+	-print0 | xargs -0 --no-run-if-empty gzip -v

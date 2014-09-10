@@ -1,0 +1,8 @@
+#! /bin/sh
+
+test "$(id -u)" != 0 && exec sudo -u root $0 "$@"
+if test "$(id -u)" != 0 ; then
+	echo must run as root
+	exit 2
+fi
+exec /opt/thunderbird-2.0.0.0/thunderbird "$@"

@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# wbanner -- wide banner: rotate banner output 90 degrees.
+# $Id$
+# Carlos Duarte, 960726/980724
+
+# wbanner supports all chars, except: <>[\]^_{|}~
+# wbanner '!"#$%&'\''()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ`abcdefghijklmnopqrstuvwxyz'
+
+
+: ${LINES=60} ${COLS=80}
+
+xy() 	{ echo -en '\033['$1';'$2'H'; }
+up() 	{ echo -en '\033['$1'A'; } 
+down() 	{ echo -en '\033['$1'B'; }
+right() { echo -en '\033['$1'C'; }
+left() 	{ echo -en '\033['$1'D'; }
+clear()	{ tput clear; }
+bottom(){ xy $LINES 1; }
+
+UP1=`echo -en '\033[A'`
+DOWN1=`echo -en '\033[B'`
+RIGHT1=`echo -en '\033[C'`
+#LEFT1=`echo -en '\033[D'`
+LEFT1=`echo -en '\010'`
+BOTTOM=`bottom`
+DOWN_LINES=`down $LINES`
+
+HSCROLL=`awk -v nl=$LINES '
+BEGIN { 
+	printf "%c%d", 27, 7
+	printf "%c[%d;%dH%c[P", 27, 1, 1, 27
+	for(i=2; i<=nl; i++)
+		printf "%c[B%c[P", 27, 27
+	printf "%c%d", 27, 8
+}'`
+
+clear
+
+banner -w$LINES "$@" | sed '
+
+1i\
+'$BOTTOM'
+
+s/^ *$/'$RIGHT1'/
+tn
+
+s/./&'$UP1$LEFT1'/g
+
+s/$/'$DOWN_LINES$RIGHT1'/
+
+:n
+
+'$COLS',${
+i\
+'$HSCROLL'
+}
+
+' | tr -d '\n' 
+
+bottom

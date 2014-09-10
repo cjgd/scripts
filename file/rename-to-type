@@ -1,0 +1,57 @@
+#! /bin/sh
+# Carlos Duarte, 060619
+
+#
+# _1BAB47F38150416DB451815C0E30B8E5: ASCII C++ program text, with CRLF line terminators
+# _1E4A683A9ADD41968753B8179F10D2E5: Microsoft Office Document
+# _2A9DE9494AA448E19981DF7DF7EBEA12: MS Windows PE 32-bit Intel 80386 console DLL
+# _2DD93D5241EB4BBFBBE7C8E6506BED99: XML document text
+# _316B102A50A34AE9B3A6BBA0458DBC2D: XML document text
+# _32F35D7D275F453D80B282C65D2ECEB9: HTML document text
+
+
+if test $# -eq 0; then
+	echo "usage: $0 files*"
+	exit 2
+fi
+
+MV="echo mv"
+MV="mv"
+
+file "$@" | 
+while IFS=": " read filename desc ; do
+	case "$filename" in 
+	*.? | *.?? | *.??? | *.???? ) 
+		# already with extension
+		continue 
+		;;
+	* )
+		case "$desc" in 
+		*"XML document"* ) 
+			$MV "$filename" "$filename".xml ;;
+		*"HTML document"* ) 
+			$MV "$filename" "$filename".html ;;
+		*"DLL"* ) 
+			$MV "$filename" "$filename".dll ;;
+		*"PNG image"* ) 
+			$MV "$filename" "$filename".png ;;
+		*"GIF image"* ) 
+			$MV "$filename" "$filename".gif ;;
+		*"PC bitmap data"* ) 
+			$MV "$filename" "$filename".bmp ;;
+		*"MS-DOS executable"* ) 
+			$MV "$filename" "$filename".exe ;;
+		*"WAVE audio"* ) 
+			$MV "$filename" "$filename".wav ;;
+		*"WAVE audio"* ) 
+			$MV "$filename" "$filename".wav ;;
+		*"Bourne shell"* ) 
+			$MV "$filename" "$filename".sh ;;
+		*"PDF document"* ) 
+			$MV "$filename" "$filename".pdf ;;
+		*"compiled Java class"* ) 
+			$MV "$filename" "$filename".class ;;
+		esac
+		;;
+	esac
+done

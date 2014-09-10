@@ -1,0 +1,51 @@
+#! /bin/sh
+
+# split-big-dir -- split a big dir, into several of approx same size 
+# $Id: split-big-dir,v 1.2 1998/07/10 19:15:27 cdua Exp cdua $
+# Carlos Duarte, 970516
+
+# take SOURCE-DIR and spread all its files into 1/ 2/ 3/ ... 
+# with du 1/ 2/ apprx equal to SPACE
+
+trap -- 'rm -f $temp; rmdir $dir' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hn] source-dir space
+
+  -h      this help
+
+space in Kb, or whatever du reports.
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -ne 2; then echo "$USAGE"; exit 1; fi
+
+dir=$1
+spc=$2
+
+temp=zz.temp.lst.$$.
+ls -a1 $dir | sed -e '/^\.$/d' -e '/^\.\.$/d' > $temp
+
+exec 3<$temp
+while : ; do 
+	sdir=1
+	while test -d $sdir; do sdir=`expr $sdir +  1`; done
+	mkdir $sdir
+	while test `du $sdir | cut -f1` -lt $spc; do
+		read file 0<&3 || break 2
+		mv $dir/$file $sdir
+	done
+done
+exec 3<&-
+exit

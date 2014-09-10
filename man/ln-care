@@ -1,0 +1,84 @@
+#! /bin/sh
+
+# ln-care -- take care of hard linked files
+# $Id: ln-care,v 1.2 1998/07/10 21:35:49 cdua Exp cdua $
+# Carlos Duarte, 960707
+
+#
+#	ln-care will find all files that are hard links, i.e. all files that
+#	are the same with diff names, and don't contain any .so
+#
+#	then, the first of that files, remains as it is, the second will be 
+#	deleted and replaced by '.so man1/first.1', for example, and all
+#	others will be hard links to the second
+#
+#	this is useful when aplied to man pages directory, when usualy
+#	there are several files hard linked with each others, I prefer
+#	.so method, because in that way, the original file can be still
+#	compressed 
+#
+
+# usage: ln-care man-files... 
+#    eg: ln-care *
+#
+
+grep -lv '^\.so' "$@" | while read file; do 
+	ls -i1 "$file" 
+done | { sort ; echo '-2 foo'; } | awk '
+
+BEGIN {
+	last_inode = -1
+	i = 1
+	pwd = "'"`pwd`"'"
+}
+
+function basename(s,    p) {
+	while ((p=index(s,"/")) != 0)
+		s = substr(s, p+1)
+	return s
+}
+
+function dirname(s,	p,p0) {
+	p0 = 0
+	for (;;) {
+		p = index(substr(s,p0+1),"/")
+		if (p == 0) break
+		p0 += p
+	}
+	if (p0 == 0) return "."
+	if (p0 == 1) return "/"
+	return substr(s,1,p0-1)
+}
+
+{
+	file = $2
+	inode = $1
+
+	if (inode == last_inode) {
+		file_tbl[i] = file
+		i++
+	} else {
+		if (i > 1) {
+			main = basename(last_file)
+			fn = basename(dirname(pwd "/" last_file))
+			scnd = file_tbl[1]
+
+			printf "rm -f \"%s\"\n", scnd
+			printf "echo .so %s/%s > \"%s\"\n", fn, main, scnd
+			max = i
+			for (i = 2; i < max; i++) {
+				print "rm -f " file_tbl[i]
+				printf "ln -fv %s %s\n", scnd, file_tbl[i]
+			}
+		}
+
+		i = 1
+		last_inode = inode
+		last_file = file
+	}
+}
+
+END {
+	print "exit"
+
+}' | sh

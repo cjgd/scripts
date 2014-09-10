@@ -1,0 +1,48 @@
+#!/bin/sh 
+
+# x-random-bitmap -- places a random bitmap as root window background
+# $Id$
+# Carlos Duarte <cgd@teleweb.pt>, 970325
+
+USAGE='
+	eval cat<<EOF
+usage: $0 -d bitmap_dirs 
+EOF
+	exit 1
+'
+
+while : ; do
+	case x"$1" in 
+	x-h)	eval "$USAGE" ;;
+	x-d)	D="$2"; shift ;;
+	x--)	shift; break ;;
+	x-*)	echo "invalid option -- `echo $1|cut -c2-`"
+		eval "$USAGE" ;;
+	*)	break ;;
+	esac
+	shift
+done
+test $# -eq 0 || eval "$USAGE" 
+test "$D" = "" && eval "$USAGE"
+
+if test -d "$D"; then : ; else
+	echo "$D: bad dir"
+	exit 1
+fi
+
+ls "$D" | awk '
+BEGIN { srand(); i = 0 }
+$0 == "." || $0 == ".." { next } 
+{ f[i] = $0; i = i+1 }
+END {
+	for ( j = 0; j < (i-1); j++ ) {
+		n = int ( rand() * 953 ) % ( i - j ) 
+		x = f[j]; 
+		f[j] = f[n]; 
+		f[n] = x; 
+	}
+	for (;;) for ( j = 0; j < i; j++) {
+		printf "xsetroot -fg black -bg lightblue -bitmap %s/", "'"$D"'"
+		printf "%s; sleep 120\n", f[j] 
+	}
+}' | sh 

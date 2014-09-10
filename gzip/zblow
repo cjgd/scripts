@@ -1,0 +1,17 @@
+#! /bin/sh
+
+# zblow -- blows compressed stuff to stdout 
+# $Id: zblow,v 1.1 1998/07/09 22:21:58 cdua Exp cdua $
+# Carlos Duarte, 980315/980709
+
+for i
+do 
+	case "$i" in 
+	*.Z | *.gz )
+		gzip -dc $i ;;
+	*)
+		cat $i ;;
+	esac
+done
+		
+

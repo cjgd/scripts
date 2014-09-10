@@ -1,0 +1,107 @@
+#!/bin/sh -
+
+# month-hard-way -- show current month on hairy ways... 
+# $Id$
+# Carlos Duarte, 960928
+
+# usage: ./month-hard-way
+
+# date 	
+# 	pipes day-month-year to first sed script
+# 1st sed
+# 	make a valid bc(1) input that: 
+# 		- compute weeday of given date
+# 		- output a number per line, for days from sunday to the
+# 		    weekday of the first fay in month, outputs 0s, for
+# 		    each day of the month, output that day number, for
+# 		    days over the month output /**/day-no
+# bc
+# 	execute the above
+# 2nd sed
+# 	format all lines to write a nice calendar, with all days of
+# 	  weeks on one line
+# 
+
+date +'%d%n%m%n%Y' | sed -n '
+
+h
+
+n
+H
+
+n
+s/../&\
+/
+H
+
+g
+s_\(.*\)\n\(.*\)\n\(.*\)\n\(.*\)_f=31-(\2==4||\2==6||\2==9||\2==11)-(\2==2)*3;a=\2-2;b=\4-(a<=0);a+=12*(a<=0);c=\1+(13*a-1)/5-\3-\3+b+b/4+\3/4;d=(c-\1+71)%7_
+
+x
+s/.*/....../
+:b
+x
+s/$/;if(d-->0)0/
+x
+ta
+:a
+s/.//
+tb
+
+s/$/............................../
+x
+s/$/;e=0/
+x
+:d
+x
+s/$/;++e/
+s/$/;if(e>=f)"\/**\/"/
+x
+tc
+:c
+s/.//
+td
+
+x
+
+p
+
+
+' | bc | sed -n '
+
+/^\/**\//bc
+
+s/^/  /
+s/.*\(...\)/\1/
+s/  0/   /
+H
+
+$!b
+
+:c
+x
+s/\n//
+x
+:f
+
+s/.*/...../
+:d
+x
+s/\n//
+x
+ta
+:a
+s/.//
+td
+x
+P
+te
+:e
+s/^[^\
+]*\n//
+x
+tf
+ 
+q
+
+'

@@ -1,0 +1,120 @@
+#! /usr/bin/perl
+
+# update-stow --
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990116
+
+# 
+# this script is to be run on a crontab, or something, and
+# it is to mantain a stow package...
+# 
+# it is somehow hardcoded
+# 
+# operation mode: 
+# . keeps a stamp file, that keeps a count, and its modification time.
+# . if any package under stow is newer than mod time, then it is stowed
+# . if count is reached, all packages are stowed
+# 
+# so, the things to define, are: 
+# . $stamp_file = "/usr/local/.stow_stamp", where stamp file lives
+# . $stow_dir = "/SHARE/os-stow", eg: /SHARE/irix-stow, where packages lives
+# . target dir, this is hardcoded on stow invocation.  currently, there are
+#   two targets: 
+#     . /usr/local, for "normal" packages
+#     . / (root), for dotted started packages
+# 
+#   for instance, "stow-1.3.2" will be stowed into /usr/local, but
+#   ".dosemu-0.66.7" will be stowed to root
+# 
+#   this is to make happy pacakges that wants files under specific
+#   locations, like /etc and /usr/X11*, for example
+# 
+
+sub get_time {
+	local($file) = shift; 
+	return (stat($file))[9]; 
+}
+
+sub put_time {
+	local($file) = shift; 
+	open(F, $file); 
+	local($n) = <F>; 
+	close(F); 
+	chop $n; 
+	open(F, ">$file"); 
+	printf F "%d\n", $n+1; 
+	close(F); 
+	# system("touch $file"); 
+}
+
+sub get_count {
+	local($file) = shift; 
+	local($n); 
+	open(F, $file); 
+	$n = <F>; 
+	close(F); 
+	chop $n; 
+	return $n+0; 
+}
+
+sub reset_count {
+	local($file) = shift; 
+	open(F, ">$file"); 
+	print F "0\n"; 
+	close(F); 
+}
+
+$stamp_file = "/usr/local/.stow_stamp"; 
+if ( -e $stamp_file ) {
+	$stamp_time = &get_time($stamp_file);
+}
+
+$os = `uname`; 
+$os =~ tr/[A-Z]/[a-z]/; 
+$os =~ tr/[a-z]//dc; 
+$stow_dir = "/SHARE/$os-stow"; 
+
+if (&get_count($stamp_file) > 336) {
+	opendir(D, $stow_dir) || die; 
+	for $file (readdir D) {
+		($file eq ".") && next; 
+		($file eq "..") && next; 
+		push(@args, $file); 
+	}
+	&reset_count($stamp_file); 
+} else {
+	if (&get_time("$stow_dir/.") < $stamp_time) {
+		goto _END; 
+	}
+
+	opendir(D, $stow_dir) || die; 
+	for $file (readdir D) {
+		($file eq ".") && next; 
+		($file eq "..") && next; 
+		if (&get_time("$stow_dir/$file") > $stamp_time) {
+			push(@args, $file); 
+		}
+	}
+}
+closedir D;
+
+if (scalar(@args) > 0) {
+	@local_ones = grep(!/^\./, @args); 
+	@root_ones = grep(/^\./, @args); 
+	if (@local_ones+0) {
+		$cmd = 
+		sprintf("cd %s && /usr/local/bin/stow -v -t /usr/local %s", 
+				$stow_dir, join(' ', @local_ones)); 
+		system($cmd); 
+	}
+	if (@root_ones+0) {
+		$cmd = 
+		sprintf("cd %s && /usr/local/bin/stow -v -t / %s", 
+				$stow_dir, join(' ', @root_ones)); 
+		system($cmd); 
+	}
+}
+
+_END: 
+&put_time($stamp_file); 
+

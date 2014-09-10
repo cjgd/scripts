@@ -1,0 +1,62 @@
+#! /bin/sh
+
+# show-duped -- output duped entries on specified field
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990125/990216
+
+
+USAGE="\
+usage: $0 [-h] [-n field_number] [-f field_separator] [files...]
+
+  -h      this help
+  -n      specify field number to act on (default: first)
+  -f      field separator (default: runs of white space)
+
+duped entries must be in order (sequentially)
+
+eg input:      output:
+1              1
+1              1
+2              4
+3              4
+4              4
+4
+4
+"
+
+field=1
+fs=""
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	shift; field=$1 ;;
+	x-f)	shift; fs=$1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+## if _must_ accept one extra argument after options
+#if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+if test "$field" = ""; then echo "$USAGE"; exit 1; fi
+
+test "$fs" != "" && fs="-F'$fs'"
+##echo $fs; exit
+
+awk $fs '
+prev == $'$field' {
+	print p0
+	print $0
+	while ((getline >0) && prev == $'$field')
+		print $0
+}
+
+{
+	prev = $'$field'
+	p0 = $0
+}' $*
+

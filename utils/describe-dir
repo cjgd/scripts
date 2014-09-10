@@ -1,0 +1,15 @@
+#! /bin/sh 
+
+# describe-dir -- get a description of kind of file on current dir
+# $Id: describe-dir,v 1.1 1998/07/09 02:54:32 cdua Exp cdua $ 
+# Carlos Duarte, 980707
+
+# usage: ./describe-dir 
+# or :   ./describe-dir ../src ../lib
+
+find ${@-*} -print | xargs file -L | awk '
+{ sub(/^[^:]*:[ \t]*/, ""); x[$0]++ }
+
+END {
+	for (i in x) printf "%6d\t%s\n", x[i], i
+}' # | sort +0nr -1

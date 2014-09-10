@@ -1,0 +1,44 @@
+#! /bin/sh
+
+# rcsmvdir -- move ,v files into RCS directory
+# $Id: rcsmvdir,v 1.1 1998/09/06 22:53:57 cdua Exp cdua $
+# Carlos Duarte, 980709
+
+USAGE="\
+usage: $0 [-h] dirs...
+
+  -h      this help
+  -v      verbose 
+
+  move ,v files into RCS directory, creating it, if necessary
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-v)	VERBOSE=on ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+p=`/bin/pwd`
+for i 
+do
+	cd $p
+	test -d $i || continue
+	cd $i
+	test -d RCS || mkdir RCS
+
+	if test x"`echo *,v`" != x'*,v'; then 
+		test x$VERBOSE = xon && echo on dir $i: moving *,v \-\> RCS
+		mv *,v RCS
+	fi
+done
+exit

@@ -1,0 +1,34 @@
+#! /usr/bin/perl
+
+# fix-path -- fix path on redhat startup scripts, to include /usr/local/bin
+# Carlos Duarte, 990917
+
+use strict; 
+my $f = "/etc/rc.d/init.d/functions"; 
+die "can't write on $f: $!" if ( ! -w $f ); 
+
+my @a; 
+open FF, $f or die "can't read from $f: $!"; 
+while (<FF>) {
+	/PATH=/ and goto found; 
+	push @a, $_; 
+}
+close FF; 
+exit;	 ## did not found PATH to setup 
+
+found: 
+m#/local/bin# and goto done; 
+
+s#"?\s*;?\s*$#:/usr/local/bin$&#s;  ## add usr local bin to PATH
+push @a, $_; 
+push @a, <FF>;
+system("cp -pf $f $f.dist"); 
+open WF, ">$f"; 
+for (@a) {
+	print WF $_; 
+}
+close WF; 
+
+done: 
+close FF; 
+exit; 	## nothing left to be done

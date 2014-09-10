@@ -1,0 +1,32 @@
+#! /bin/sh
+
+# make-install -- gross hack to run make install
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990106
+
+# idea -- if installation related software, does not depend
+# on /usr/local, and one wants to install software under it, 
+# then, one can change temporarly /usr/local to stow package directory, 
+# make the normal install, and finally, restore the original /usr/local...
+
+if test $# -lt 1; then
+	echo "usage: $0 dest-dir [make args]"
+	echo "   eg: $0 /SHARE/linux-stow/tin-980818"
+	exit
+fi
+
+here="`pwd`"
+dest=$1
+shift
+## WARN: mkdir -p may not work everywhere
+test -d $dest || mkdir -p $dest
+cd /usr
+mv local local-
+ln -s $dest local
+arg=install
+test $# -ne 0 && arg="$*"
+cd $here
+make $arg
+cd /usr
+rm local
+mv local- local

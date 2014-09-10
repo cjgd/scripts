@@ -1,0 +1,21 @@
+#! /bin/sh 
+
+# gztobz2 -- recompresses gzip files with bzip2
+# Carlos Duarte, 031029
+
+if test $# -eq 0 ; then
+	echo "usage: $0 files"
+	exit 1
+fi
+
+for i
+do
+	case $i in 
+	*gz) ;; 
+	*) continue ;;
+	esac
+	dst="$(echo "$i" | sed 's/gz$//')"bz2
+	gzip -dc "$i" | buffer | bzip2 > "$dst" && 
+	touch -r "$i" "$dst" &&
+	rm "$i"
+done

@@ -1,0 +1,39 @@
+#! /bin/sh
+
+# rcsupdate -- updates rcs files
+# $Id: rcsupdate,v 1.1 1998/09/06 23:00:56 cdua Exp cdua $
+# Carlos Duarte, 980906
+
+USAGE="\
+usage: $0 [-h] [-opts] files ... 
+
+  -h      this help
+  -opts   opts passed to ci
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-?)	opts="$opts $1" ;; 
+	x--)	shift; break ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+temp="/tmp/4.aSd%.$$"
+trap -- 'rm -f $temp' EXIT SIGINT
+
+for i 
+do
+	if rcsdiff $i >$temp 2>&1; then : ; else
+		more $temp
+		ci $opts $i
+	fi
+done
+
+exit
+

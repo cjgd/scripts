@@ -1,0 +1,9 @@
+#! /bin/sh -f
+
+# wf -- word frequencies
+# $Id: wf,v 1.1 1998/09/06 16:47:52 cdua Exp cdua $
+# Carlos Duarte, 980709/980722
+
+sed 's/[^A-Za-z_][^A-Za-z_]*/\
+/g; s/\n*$//; s/^\n*//' "$@" | sort | uniq -c 
+

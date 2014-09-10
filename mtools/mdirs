@@ -1,0 +1,30 @@
+#! /bin/sh 
+
+# mdirs -- recursive mtools directory list, front end to mdir
+# $Id: mdirs,v 1.1 1997/09/13 22:59:12 cdua Exp cdua $ 
+# Carlos Duarte <cgd@mail.teleweb.pt>, 970913/980803
+
+# usage: mdirs [drive]
+
+trap -- 'rm -f /tmp/mds.$$.; exit' EXIT SIGINT
+
+mdir "$@" | tee /tmp/mds.$$.
+
+sed '
+/./! d
+/^ /d
+/<DIR>/!d
+/^\. /d
+/^\.\. /d
+h
+s/^\(.*\)<DIR>.*/\1/
+x
+ta
+:a
+s/^.*[0-9]\?[0-9]:[0-9][0-9]  //
+tb
+x
+:b
+' /tmp/mds.$$. | while read x; do 
+	$0 "$@"/$x
+done

@@ -1,0 +1,72 @@
+#! /bin/sh 
+
+# rel2abs -- convert relative symlinks to absolute ones
+# $Id: rel2abs,v 1.2 1998/07/10 19:14:49 cdua Exp cdua $
+# Carlos Duarte, 971014/980709
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] dirs files...
+
+  -h      this help
+  -n      no op
+  -r      works recursively
+  -v      be verbose
+
+convert relative symlinks to absolute ones
+if files are not given, use all files on current directory
+"
+
+finder='for i; do if test -d $i; then echo $i/* $i/.*; else echo -ald $i; fi;
+done | xargs ls -ald'
+cmd=sh
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd=cat ;;
+	x-r)	finder='find $* -ls' ;;
+	x-v)	V=y ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+test X$V = Xy && verbose='
+h
+s/.*/echo doing... &/
+p
+g'
+
+PWD=/bin/pwd
+test x$BASH != x && PWD='pwd -P'
+
+if test $# -eq 0; then set -- . ; fi
+
+# dest -> source
+#
+eval "$finder" | sed '
+# /^l/!d
+/ -> /!d
+y/	/ /
+s/^.* \(.*\) -> \(.*\)$/\1 \2/
+h
+s/^.* //
+# source here, if start with /, it is already abs
+/^\//d 
+s:/*$::
+x
+s/ .*$//
+# dest here
+s/^/rm -f /p
+s/^......//
+G 
+/\//!s/^/.\//
+s://*:/:g
+s:^\(.*\)/\([^/]*\)\n\(.*\)/\([^/]*\)$:ln -s `cd \1/\3 \&\& '"$PWD"'`/\4 \1/\2:
+'"$verbose" | $cmd
+#exit 0
+exit

@@ -1,0 +1,59 @@
+#! /usr/bin/perl
+
+# pix-pcmcia-rc -- 
+#	rename S45pcmcia to S09pcmcia, in order to run BEFORE network
+#	rc script does
+
+# $Id$
+# Carlos Duarte, 990914
+
+use strict;
+
+my @rc_dirs = glob "/etc/rc.d/rc?.d";
+
+@rc_dirs == 0 and die "could not find any rc directory";
+
+## get all rc symlinks 
+$"=" ";
+open CMD, "find @rc_dirs -type l -print|" 
+	or die "find: $!";
+my @ln = <CMD>;
+close CMD;
+chomp @ln; 
+
+## get S??network and S??pcmcia
+my (%rc_net, %rc_pcm);
+for (@ln) {
+	my ($dir, $ln) = /^(.*)\/([^\/]*)$/;
+	if (/network/i && $ln =~ /^S/) {
+		$rc_net{$dir} = $ln; 
+	} elsif (/pcmcia/i && $ln =~ /^S/) {
+		$rc_pcm{$dir} = $ln; 
+	}
+}
+
+my @old; my @new;
+for my $d (keys %rc_net) {
+	exists $rc_pcm{$d} 
+		or die "pcmcia RC does not exist for dir: $d";
+	my ($net_n) = $rc_net{$d} =~ /(\d+)/;
+	my ($pcm_n, $rest) = $rc_pcm{$d} =~ /^S(\d+)(.*)$/;
+	$net_n > $pcm_n and next; ## everything ok... 
+	$pcm_n = $net_n;
+	my $new;
+	for (;;) {
+		--$pcm_n <= 1 
+			and die "can not move $rc_pcm{$d} below $rc_net{$d}";
+		$new = sprintf("%s/S%02d%s", $d, $pcm_n, $rest);
+		last if ( ! -l $new && ! -e $new );
+	}
+	push @old, "$d/$rc_pcm{$d}"; 
+	push @new, $new;
+}
+
+while (@old and @new) {
+	my $old = shift @old;
+	my $new = shift @new;
+	print "$old -> $new\n";
+	###rename $old, $new;
+}

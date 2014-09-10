@@ -1,0 +1,29 @@
+#! /bin/sh
+
+# max-arg-len -- find max arg len list to give to a command
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 991014
+
+A="x x x x"
+while : ; do 
+	B="$A $A"; 
+	/bin/echo $A >/dev/null 2>&1 || break
+	A="$B"
+done
+
+if /bin/echo $A x >/dev/null 2>&1; then :; else
+	echo "$A" | wc -c
+	exit
+fi
+
+# taylor A up
+B="$A"
+while : ; do
+	B="`echo \"$B\" | sed s/.././g`"
+	if /bin/echo "$A$B" >/dev/null 2>&1; then
+		A="$A$B"
+	fi
+	case $B in "" | ? | ?? ) break ;; esac
+done
+
+echo "$A" | wc -c

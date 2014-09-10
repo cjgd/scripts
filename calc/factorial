@@ -1,0 +1,52 @@
+#! /bin/sh
+
+# factorial -- computes factorial 
+# $Id: factorial,v 2.2 1998/07/09 02:40:14 cdua Exp cdua $
+# Carlos Duarte, 960719/971116
+
+# usage: ./fact.b 3 5 12 44 ... 
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] [-n] n1 [n2 ...]
+
+  -h      this help
+  -n      no op
+"
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	CMD=cat ;; 
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+: ${CMD=bc}
+
+bc <<eof
+`echo $* 0 | awk '{for (i=1; i<=NF; i++) print "a[",i,"]=",$i,";"; }'`
+
+c[1]=1; 
+
+# compute factorial of x; uses c[1-x] for cache
+define f (x) {
+	auto r
+
+	if (c[x]) return (c[x]); 
+	r=x*f(x-1);
+	c[x]=r;
+	return (r);
+}
+
+for (i=1; a[i]; i++) 
+	print a[i], "! =", f(a[i]), "\n"
+quit
+eof

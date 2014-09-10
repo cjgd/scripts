@@ -1,0 +1,230 @@
+#! /bin/sh 
+
+# edit-index -- detect new and obsoleted entries on INDEX files
+# $Id: edit-index,v 2.1 1998/09/08 23:26:57 cdua Exp cdua $
+# Carlos Duarte, 971026/980908
+
+# usage: ./edit-index dir1 dir2 ... 
+# 
+# an index file can be introduced using the following format: 
+# 
+# file_name description
+#  description 
+#  ...
+# 
+# notes: file_name must not contain spaces, and as a general rule, each
+# line started by blanks, are descriptions from the previous file.
+# also, the rest of the line that contains the file name, is also
+# a description
+# 
+
+INDEX=00INDEX
+
+USAGE="\
+usage: $0 [-h] [-f index_file] [-b] [-r] [-m[df]] dir1 [dir2 ...]
+
+  -h      this help
+  -f index_file
+	  use index_file, instead default $INDEX
+  -b      make a backup of existing index
+  -r      apply recursively to all subdirs of each named directory
+  -m[df]  make a manifest index, i.e. a single index for all files
+	    and dirs recursively
+	  if d -- only collect dirs for index
+	  if f -- only collect files
+	  default: collects all
+  -a      pass to ls: see files started per dot also, on normal indexes
+  -F      pass to ls: append a char describing each file
+  -v pattern
+	  do not take files that match pattern to index
+	  can be used several times
+
+  create and/or update, index files on specified directories
+  ex: update index on current dir,        $0 . 	
+  ex: update all subdirs of current dir,  $0 * 
+  ex: creat and update a manifest for 
+      package files only,                 $0 -mf .
+"
+
+test -r $HOME/.editindex && set -- `cat $HOME/.editindex` $@
+test -r ./.editindex && set -- `cat ./.editindex` $@
+
+RECURSIVE=0; 
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-b)	DOBAK=yes ;;
+	x-f)	shift; INDEX="$1" ;;
+	x-r) 	RECURSIVE=1 ;;
+	x-m*)	MANIFEST="$1" ;;
+	x-a)	A="-a" ;;
+	x-F)	A="-F" ;;
+	x-v) 	shift; REJECT="$REJECT -e \\@`echo $1`@d" ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+temp1="/tmp/.t.,$$"
+temp2="/tmp/.t,.$$"
+trap -- 'rm -f $temp1 $temp2' EXIT # SIGINT
+
+for named_dir; do
+	if test x$RECURSIVE = x0; then
+		cmd="echo $named_dir"
+	else
+		cmd="find $named_dir -type d -print"
+	fi
+	for dir in `$cmd | sort`; do
+
+		test -d $dir || continue
+
+		{
+			test -f $dir/$INDEX && cat $dir/$INDEX
+			echo /
+			case x$MANIFEST in 
+			x-m)	find $dir -print | xargs ls -1d $F ;;
+			x-md)	find $dir -type d -print | xargs ls -1d $F ;;
+			x-mf)	find $dir -type f -print | xargs ls -1d $F ;;
+			*) 	ls -1 $F $A $dir ;;
+			esac | sed \
+			  -e 's:/*$::' \
+			  -e 's:^\(\./\)*::' \
+			  -e 's:\(\./\)*$::' \
+			  -e 's:/\./:/:g' \
+			  -e '/^\.\/*$/d' \
+			  -e '/^\.\.\/*$/d' \
+			  $REJECT
+
+		} | expand | awk '
+
+		/^\/$/ {
+			state++
+			next; 
+		}
+
+		# got: name [desc] 
+		state == 0 && /^[^ ]/ {
+			x[$1] = $0
+			prev1 = $1
+			next
+		}
+
+		# got:    desc
+		state == 0 {
+			x[prev1] = x[prev1] "\n" $0; 
+			next; 
+		}
+
+		# real files now (no desc)
+		{
+			if (x[$1] && (x[$1] ~ / / || x[$1] ~ /\n/)) {
+				a[ai++] = x[$1]; 
+				x[$1] = 0; 
+			} else {
+				b[bi++] = $0; 
+				if (x[$1])
+					x[$1] = 0;
+			}
+		}
+
+		END {
+			print "[obsoleted: dont exist, but have description]"
+			for (i in x) {
+				if (x[i]) print x[i]
+			}
+
+			print "\n[current: exist and have description]"
+			for (i=0; i<ai; i++)
+				print a[i]
+
+			print "\n[new: exist, but dont have description]"
+			for (i=0; i<bi; i++)
+				print b[i]
+		}' > $temp1
+
+		${EDITOR-vi} $temp1
+
+		awk '
+		function sort(x, n,	i,j,t) {
+			for (i=2; i<=n; i++) {
+				if (x[i] > x[i-1])
+					continue; 
+				t = x[i]; j = i-1
+				do x[j+1] = x[j]; while (t < x[--j]);
+				x[j+1] = t
+			}
+		}
+
+		{
+			for (;;) {
+				if ((length($0) == 0) || ($0 ~ /^\[.*\]$/)) 
+					next;
+				file = $1
+				f[++n] = file
+				if (NF>1) {
+					$1 = ""
+					sub(/^[ \t]*/, "")
+					d[file] = $0
+				}
+				for (;;) {
+					if ((getline)<=0)
+						exit
+					if ($0 !~ /^[ \t]/)
+						break
+					d[file] = d[file] "\n" $0
+				}
+			}
+		}
+
+		function pr(file, desc,		i,n,spc) {
+			if (desc == "") {
+				print file
+				return; 
+			}
+			spc = ""
+			n = split(desc, line, /\n/)
+			for (i=1; i<=n; i++) {
+				if (length(line[i]) == 0)
+					continue; 
+				sub(/^[ \t]*/, "", line[i])
+				sub(/[ \t]*$/, "", line[i])
+				if (length(file) >= 24) {
+					print file
+					file = ""
+				}
+				printf "%-24s%s%s\n", file, spc, line[i]
+				file = ""
+				spc = "  "
+			}
+		}
+
+		END {
+			sort(f, n)
+			for (i=1; i<=n; i++) 
+				pr(f[i], d[f[i]])
+		}' < $temp1 > $temp2
+		rm -f $temp1
+
+		if test -f $dir/$INDEX; then
+			if cmp $temp2 $dir/$INDEX >/dev/null; then
+				rm -f $temp2
+			else
+				test x$DOBAK = xyes && \
+					mv -f $dir/$INDEX $dir/${INDEX}.OLD
+				mv -f $temp2 $dir/$INDEX
+			fi
+		else
+			mv $temp2 $dir/$INDEX
+		fi
+	done
+done
+
+exit
+

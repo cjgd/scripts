@@ -1,0 +1,14 @@
+#! /bin/sh
+
+# optimize-make --
+# 	edit makefiles, and change CFLAGS, by removing debuggin
+# 	options, and adding optimize ones
+#
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990216
+
+# need some hacking on perl editing code ...
+# 
+find . -name Makefile -print | 
+xargs perl -i.bak -p -e 's/(.*=.*)-g/$1-O/'
+

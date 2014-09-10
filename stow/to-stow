@@ -1,0 +1,124 @@
+#! /bin/sh 
+
+# to-stow -- work on 'make -n' output to produce proper commands to install
+#            over /usr/local/stow/...
+#
+# $Id: to-stow,v 1.5 1998/09/08 23:50:35 cdua Exp cdua $
+# Carlos Duarte, 970421/970515
+
+usage() {
+cat<<eof
+usage: $0 [-s stow_dir] [-p prefix_to_replace] package install_file
+or   : $0 [-s stow_dir] [-p prefix_to_replace] package
+
+use second, to read from stdin, like: 
+	
+        make -n install | $0 package-1.0 > my_file
+        vi my_file
+        sh -x my_file
+
+BIG FAT WARNING: pass output to a shell sh(1) like, but with 
+pushd and popd (like bash), and make sure you have install 
+and your mkdir accept '-p', or else you are doomed to darkness.
+
+Prefix_to_replace is /usr/local/ by default. Note the 
+trailing /. It is important to be there. 
+Eg: 
+
+	make -n install | $0 -p /usr/X11R6/ > my_script
+	vi my_script	# minor corrections...
+	sh my_script	# install under /usr/X11R6/stow 
+
+eof
+exit 1
+}
+
+prefix=/usr/local/
+stow_dir=/opt/stow/
+while : ; do
+	case "$1" in 
+	-p ) shift; prefix="$1"	;; 
+	-s ) shift; stow_dir="$1" ;; 
+	* ) break ;;
+	esac
+	shift
+done
+
+case "$prefix" in */ ) ;; * ) usage ;; esac 
+test x$1 = x && usage
+
+pack="$1"
+file="$2"
+
+# assume mkdir -p, install, and pushd, popd functions
+sed '
+
+# if any one depend on tabs, then deserves this... 
+y/	/ /
+
+# if I have a cd or a continuated line make it (cmds..) 
+/\<cd\>/bb
+/\\$/bb
+bc
+
+:b
+/\\$/{
+	N
+	bb
+}
+
+/^ *(/!s/.*/(&)/
+
+:c
+s://*:/:g
+s:'"${prefix}:${stow_dir}${pack}"'/:g
+
+# I have install utilility... skip script
+s:install[-._]sh :install :g
+# ... and I have it also on path.. skip leading dirs
+s:[^ ]*/install :install :g
+
+# replace all cp by install, except for cp -r or cp -a
+/cp  *-[^ ]*[ra]/ba
+s/\<cp\>  */install -o 0 -g 0 /g
+:a
+
+# add -m755 when installing bins, and -m644 when mans or infos
+# skip if install has already a -m option
+/install.*-m/bd
+# /install.*bin/s/install /&-m755 -s /g
+/install.*bin/s/install /&-m755 /g
+/install.*man/s/install /&-m644 /g
+:d
+
+# add -p to mkdir if it hasnt -p already, hope -p is supported
+/mkdir.*-p/! s/mkdir  */& -p /g
+
+# take care make messages
+/^make\[[1-9]\]:/{
+	# entering dir == cd dir
+	/Entering/{
+		s/^.*`//
+		s/'\''.*$//
+		s:.*:pushd & 1>/dev/null 2>/dev/null; :
+		b
+	}
+	# leaving dir... use popd to get back
+	/Leaving/{
+		s:.*:popd 1>/dev/null 2>/dev/null; :
+		b
+	}
+
+	# else, a (not important) warning from make... just delete
+	d
+}
+# delete "cd src && make all", etc...
+/make /d
+# delete make: xx is up to date.
+/^make: .* to date\./d
+
+# delete "Making foo on bar..." messages. May be unsafe.
+/^Making /d
+/^Installing /d
+
+' $file

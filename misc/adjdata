@@ -1,0 +1,294 @@
+#! /bin/sh
+
+# adjdata -- works on /etc/adjtime data, used by clock(8) [linux]
+# $Id: adjdata,v 1.3 1998/07/12 18:21:42 cdua Exp cdua $
+# Carlos Duarte, 960807/960825
+
+# adjdata
+# 
+# This script/database, keeps pairs of
+# 
+# 	system date
+# 	real date
+# 
+# and fixes system and CMOS time, as updating the correcting value
+# of the first field of /etc/adjtime
+# 
+# 
+# FORMAT: 
+# 
+# 	the lines from beggining thru the first line began with
+# 	######## (8 #s) is a sh(1) script, from that line thru
+# 	end is a data base.
+# 
+# 	the data base, have the format: 
+# 
+# 	lines beg with a # are comments
+# 	blank lines are ignored
+# 
+# 	each line contains a date on locale format
+# 	the dates came in this order, system date, real date, ...
+# 	as
+# 		system date 1
+# 		real date 1
+# 		system date 2
+# 		real date 2
+# 		...
+# 
+# DESCRIPTION
+# 	
+# 	to operate, two lines (i.e. on system+real date) must be present
+# 
+# 	so: sh adjdata init, take care of it
+# 
+# 	then, the user is asked for the real date, as fast as it can,
+# 	it asks system for system date, now it gots the real and the
+# 	system date taken at the (almost) same time
+# 
+# 	the system and CMOS clock are setted with real date, and
+# 	the difference between the real elapsed time and system
+# 	elapsed time is computed; 
+# 
+# 	with that difference value, the first field of /etc/adjtime
+# 	will be adjusted
+# 
+# 
+
+inpdate()
+{
+	local date
+	local ans
+
+	while : 
+	do
+
+		cat 1>&2 << eof
+This is current system date: `date` 
+Input REAL date on the same format ...
+>> note: you need not give all values, you may give only some fields,
+>>       like the hours:minutes:seconds one
+>>       or the hours/min/seconds alone
+
+>> Try whatever you want, if an error occurs you can try again
+>> if you want to abort press ^C
+
+eof
+
+		echo 1>&2 -n Input the REAL date:" "
+		read date || exit 2
+		date -d"$date" +%c 1>&2 && {
+			date 
+			date -d"$date" +%c
+			return 0
+		}
+	done
+}
+
+help()
+{
+	cat << eof
+Usage: $0 [init|info|update]
+       $0 
+
+With no args, is the same as update, and update the system time
+as well info on /etc/adjtime
+
+With init, sets this database, to current values, i.e. forget past
+
+eof
+}
+
+#----
+# Date: Fri, 11 Oct 91 11:22:36 edt
+# From: friedman@gnu.ai.mit.edu
+# To: bfox@gnu.ai.mit.edu
+
+# A replacement for basename(1).  Not all the systems I use have this
+# program.  Usage: basename [path] {extension}
+function basename ()
+{
+ local path="$1"
+ local suffix="$2"
+ local tpath="${path%/}"
+
+    # Strip trailing '/' characters from path (unusual that this should
+    # ever occur, but basename(1) seems to deal with it.)
+    while [ "${tpath}" != "${path}" ]; do
+       tpath="${path}"
+       path="${tpath%/}"
+    done
+
+    path="${path##*/}"       # Strip off pathname
+    echo ${path%${suffix}}   # Also strip off extension, if any.
+}
+#----
+
+install()
+{
+	local dest=/etc/`basename $1`
+
+# 	cp -uvdpf $1 $dest && \
+# 	chown root $dest && \
+# 	chgrp root $dest && \
+# 	chmod -x $dest
+
+	[ $0 -nt $dest ] && ln -sf $0 $dest
+}
+
+# main()
+
+case x"$1" in
+
+	x | update)
+		;;
+
+	xinit)
+		date | sed 's/.*/&\
+&/' >> $0
+		exit 0
+		;;
+
+	xinstall)
+		install $0
+		exit
+		;;
+
+	*)
+		help
+		exit 1
+		;;
+esac
+
+# inpdate | tee -a $0 | { 
+# 	read sys; 
+# 	read real; 
+# 	date -s"$real"
+# 	clock -w
+# }
+
+inpdate | {
+	read sys 
+	read real
+	date -s"$real" 
+	clock -w 
+	echo $sys >>$0
+	echo $real >>$0
+}
+
+# sed -n '
+# 
+# 1,/^########/d
+# 
+# /^#/d
+# y/	/ /
+# /^ *$/d
+# 
+# H
+# 
+# ${
+# 	x
+# 	:a
+# 	s/^.*\n\([^\n]*\n[^\n]*\n[^\n]*\)$/\1/p
+# }'
+
+	sed '1,/^########/d;/^#/d;y/	/ /;/^ *$/d' $0 | \
+	tail -n 3 | \
+	date -f - +'%s' | \
+	cat - /etc/adjtime | sed '
+
+1s/.*/tsys1=&\
+treal1=&/
+2s/^/tsys2=/
+3s/^/treal2=/
+4{;s/^/correct=/;y/	/ /;s/ .*//;}
+
+$a\
+	scale=6\
+	dsys=tsys2-tsys1\
+	dreal=treal2-treal1\
+	diff=dsys-dreal\
+	if(diff){\
+		elaps=dreal/(86400) /* 86400 = 24*60*60 */\
+		correct -= diff/elaps\
+	}\
+	correct\
+	quit
+
+' | {
+	echo -e 's/^[^ ]*/'`bc -l`'/\nwq'
+} | ed /etc/adjtime 2> /dev/null
+
+#clock -a
+
+exit 0
+
+######## 
+
+Wed Aug  7 17:20:24  1996
+Wed Aug  7 17:20:24  1996
+Wed Aug  7 17:28:45  1996
+Wed Aug 07 17:28:45  1996
+Wed Aug  7 18:18:44  1996
+Wed Aug 07 18:19:10  1996
+Wed Aug  7 18:20:42  1996
+Wed Aug 07 18:20:49  1996
+Wed Aug 7 19:26:18 1996
+Wed Aug 07 19:26:00 1996
+Wed Aug  7 19:28:45  1996
+Wed Aug  7 19:28:45  1996
+Fri Aug 9 23:11:14 1996
+Fri Aug 09 23:11:20 1996
+Tue Aug 13 21:14:27 1996
+Tue Aug 13 21:14:20 1996
+Fri Aug 16 21:45:49 1996
+Fri Aug 16 21:45:50 1996
+Sun Aug 25 00:58:17 1996
+Sun Aug 25 00:58:20 1996
+Sun Aug 25 01:58:45  1996
+Sun Aug 25 01:58:45  1996
+Mon Aug 26 12:50:21 1996
+Mon Aug 26 12:50:20 1996
+Fri Aug 30 22:05:38 1996
+Fri Aug 30 22:05:40 1996
+Thu Sep 12 13:00:59 1996
+Thu Sep 12 13:01:00 1996
+Sun Feb 9 14:34:24 MET 1997
+Sun Feb 09 17:24:30 MET 1997
+Mon Feb 10 00:17:58 MET 1997
+Mon Feb 10 03:11:05 MET 1997
+Mon Feb 10 04:04:21 MET 1997
+Mon Feb 10 03:12:55 MET 1997
+Tue Feb 11 02:10:12 MET 1997
+Tue Feb 11 03:13:12 MET 1997
+Mon Feb 10 20:23:56 MET 1997
+Mon Feb 10 20:23:55 MET 1997
+Mon Feb 10 23:06:18 MET 1997
+Mon Feb 10 23:05:57 MET 1997
+Mon Feb 10 23:06:38 MET 1997
+Tue Feb 11 02:56:55 MET 1997
+Tue Feb 11 14:49:22 MET 1997
+Tue Feb 11 14:30:45 MET 1997
+Tue Feb 11 17:12:46 MET 1997
+Tue Feb 11 16:43:05 MET 1997
+Tue Feb 11 21:30:08 MET 1997
+Tue Feb 11 19:52:10 MET 1997
+Wed Feb 12 03:06:46 MET 1997
+Wed Feb 12 02:32:45 MET 1997
+Wed Feb 12 05:25:02 MET 1997
+Wed Feb 12 17:05:50 MET 1997
+Thu Feb 13 10:25:38 MET 1997
+Thu Feb 13 21:55:25 MET 1997
+Sat Feb 15 13:48:22 MET 1997
+Sat Feb 15 15:41:10 MET 1997
+
+
+Sat Feb 15 18:40:49 MET 1997
+Thu Feb 13 15:48:15 MET 1997
+Sat Feb 8 14:18:36 MET 1997
+Thu Feb 13 17:20:50 MET 1997
+Sat May 2 19:10:18 MET DST 1998
+Fri Feb 14 00:45:00 MET 1997
+Fri Feb 14 01:12:08 MET 1997
+Fri Feb 14 01:15:10 MET 1997
+Fri Feb 14 15:21:44 MET 1997
+Sat Feb 15 20:45:00 MET 1997

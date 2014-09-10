@@ -1,0 +1,62 @@
+#! /bin/sh
+
+# downloader.sh -- call N fetchers to download M files, in parallel 
+# $Id$
+# Carlos Duarte <cgd@teleweb.pt>, 000408
+
+FETCHER='curl -Osc'
+NR=10
+DO=sh
+USAGE='
+	eval cat<<EOF
+usage: $0 [-h] [-m #] [-n] [[-f files] ...] urls...
+
+  -h      this help
+  -n      no op
+  -f files
+	  files that contains on URL per line 
+  -m      number of simultaneous downloads to launch (def: $NR)
+  -F 	  fetcher program to use (default: $FETCHER)
+EOF
+	exit 1
+'
+
+while : ; do
+	case x"$1" in 
+	x-h)	eval "$USAGE" ;;
+	x-n)	DO=cat ;;
+	x-f)	FILES="$FILES $2" ; shift ;;
+	x-m)	NR="$2" ; shift ;;
+	x-F)	FETCHER="$2"; shift ;;
+	x--)	shift; break ;;
+	x-*)	echo "invalid option -- `echo $1|cut -c2-`"
+		eval "$USAGE" ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+echo "$@" | tr ' ' \\n | awk '
+/^#/ {next}
+/^ *$/ {next}
+{ gsub(/'\''/,"'\'\\\'\''"); x[n++] = "'\''" $0 "'\''" }
+END {
+	r=n/'"$NR"'
+	k=int(r)
+	if (r!=int(r))
+		k++
+	nn=0
+	for (i=0;i<n;) {
+		for (j=k; j--; ) {
+			if (j == k-1) printf "("; 
+			if (i>=n) break
+			printf "'"$FETCHER"' %s %s\n", 
+			  x[i++], 
+			  j ? ";\\" : ") >/dev/null 2>&1 &\n"
+		}
+		nn++
+		k=int(r)
+		if (i/nn < r)
+			k++
+	}
+}' - $FILES | ${DO}

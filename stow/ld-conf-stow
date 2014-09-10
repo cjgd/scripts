@@ -1,0 +1,23 @@
+#! /bin/sh
+
+# $Id: ld-conf-stow,v 1.3 1998/09/08 23:50:27 cdua Exp cdua $
+# Carlos Duarte, 970403
+
+for dir in /usr/local/lib /usr/X11R6/lib
+do
+	ls -al $dir\
+	  | sed '1d;/^l/'\!'d' | awk '{ print $(NF-2); print $NF }' \
+	  | while : 
+	do
+		read sym || break
+		read ptr
+		
+		cd $dir; cd `dirname $ptr`; pdir=`pwd`
+
+		[ "$dir" = "$pdir" ] && continue
+
+		echo "$sym" \
+		  | egrep -q '^lib[^\.]*\.so(\.[1-9][0-9]*)?$' \
+		  && ldconfig -lv $dir/$sym
+	done
+done

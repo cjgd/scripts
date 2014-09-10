@@ -1,0 +1,35 @@
+#! /bin/sh
+
+# tget -- get entry from termcap file
+# $Id$
+# Carlos Duarte, 960904/980722
+
+# usage: tget term [termcap-database]
+
+if test $# -lt 1; then 
+	echo usage: $0 term [termcap-database]
+	exit 1
+fi
+
+sed -n '
+
+:a
+y/	/ /
+/^#/d
+/./!d
+/\\$/{
+	N
+	s/\\\n//
+	ba
+}
+
+s/:\.\.[^:]*//g
+s/: *:/:/g
+
+/\(^'"$1"'[:|]\)\|\(|'"$1"'[:|]\)/{
+ 	p
+	s/.*:tc=\([^:]\+\):.*/\1/p
+	q
+}
+
+' ${2:-'/etc/termcap'} 

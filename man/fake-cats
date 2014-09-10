@@ -1,0 +1,48 @@
+#! /bin/sh 
+
+# fake-cats -- see if there are any cat page, without the corresponding man
+# $Id: fake-cats,v 2.3 1998/07/10 21:35:03 cdua Exp cdua $
+# Carlos Duarte, 970427/980710
+
+# usage: fake-cats [mandirs... ]
+
+if test $# -ne 0; then 
+	manp=$1
+	shift
+	for p; do
+		manp=$manp:$p
+	done
+else
+	man -w 2>/dev/null 1>&2 
+	if test $? -eq 0; then 
+		manp=`man -w`
+	else
+		manp=/usr/man
+		for p in /local/gnu/man /usr/lang/man /local/man \
+			 /usr/local/man /usr/local/gnu/man /usr/opt/man \
+			 /opt/man /usr/X11/man \
+			 /usr/X11R4/man \
+			 /usr/X11R5/man \
+			 /usr/X11R6/man \
+			 /usr/openwin/man
+		do
+			test -d $p && test -x $p && manp=$manp:$p
+		done
+	fi
+fi
+
+echo $manp | tr : \\012 | while read d; do
+	test "`echo $d/cat*`" = "$d/cat*" && continue
+	find $d/cat* ! -type d -print | sed '
+h
+s:\([^/]*/\)\([^/]*\)$:\
+\1\
+\2:
+s/^\(.*\n\)cat\(.*\n.*\)$/\1man\2/
+s/\n//g
+s/\.gz$//
+s/\.Z//
+G
+s/^\(.*\)\n\(.*\)$/test -f \1 || test -f \1.gz || test -f \1.Z || echo \2/
+'
+done | sh 

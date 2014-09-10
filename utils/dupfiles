@@ -1,0 +1,50 @@
+#! /bin/sh 
+
+# dupfiles -- print duplicated files on supplied dirs 
+# Carlos Duarte, 970425/980724
+
+USAGE="\
+usage: $0 [-h] dirs...
+
+  -h      this help
+
+print duplicated file names found at dirs. 
+xx.gz, xx.Z and xx, are seen with same filenames.
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+# add a slash in front of each dir-- some finds will read dir contents, 
+# if name is a symlink pointing to a dir
+for i 
+do
+	test -d $i || continue
+	d="$d $i/"
+done
+find $d ! -type d -print | awk '
+{
+	n = split($0, a, "/")
+	sub("\.gz$", "", a[n])
+	sub("\.Z$", "", a[n])
+	dups[a[n]] = dups[a[n]] $0 "\n" 
+}
+
+END {
+	for (d in dups) {
+		x = dups[d]
+		if (match(x, "\n") != length(x)) 
+			print x
+	}
+}'

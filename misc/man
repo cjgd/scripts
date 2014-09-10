@@ -1,0 +1,292 @@
+#! /bin/sh
+
+# man -- poor man's implementation of man(1)
+# $Id: man,v 1.2 1998/07/12 18:23:10 cdua Exp cdua $
+# Carlos Duarte, 960719/960805
+
+# man, display man pages
+
+# this fn take care of whatis(1) and apropos(1)
+common()
+{
+	local d
+	local nfound=1
+	local grep_pat='"$1"'
+	local grep_prg=fgrep
+
+	[ "$1" = "whatis" ] && {
+
+		grep_pat='"(^\<$1\>)|(, \<$1\>.*\([1-9]\) -[ \t]+)"'
+		grep_prg=egrep
+	}
+	shift
+
+	while [ "$1" ]
+	do
+		for d in ${MANPATH:-'/usr/man'}
+		do
+			[ -f "$d/whatis" ] && {
+
+				eval egrep -i "$grep_pat" $d/whatis && nfound=0
+			}
+		done
+		[ "$nfound" = "1" ] && echo "$1": nothing appropriate
+		shift
+
+	done | ${MANPAGER:-more}
+
+	return $nfound
+}
+
+# compress files, if they are greater than one block
+gzip_it()
+{
+# this is for bash only
+	local ls_outp=`ls -sk $1`
+
+	[ ${ls_outp% *} -gt 1 ] && gzip -9c $1 > $2
+
+# this is for plain sh
+# 	[ "`ls -sk $1 | cut -c -4`" -gt 1 ] && gzip -9c $1 > $2
+}
+
+# receives dir ($1) and file ($2), like
+#
+# 	/usr/man/man1/ls.1
+# 
+# 	$1 -> /usr/man
+# 	$2 -> man1/ls.1
+# 
+# then tries to see if the specified file exists on /usr/man/cache/ as 
+# a preformatted cat page and if it is more recent than the source
+# 
+# this will emit the two input args, and the command to perform... like
+# 
+# input: /usr/man man1/ls.1
+# 
+# output: /usr/man man1/ls.1 nroff -mandoc > cache/ls.1; gzip -c cache/ls.1 ... 
+# 
+echo_cmd()
+{
+	#local file=`echo $2 | sed 's/\\.\(gz\|z\|Z\)$//;s/^.*\///'`
+	local file
+		file=`echo ${2##*/}`
+		file=`echo ${file%.gz}`
+		file=`echo ${file%.z}`
+		file=`echo ${file%.Z}`
+	local cache
+
+	if [ -f cache/$file.gz ]; then 
+		cache=cache/$file.gz
+	elif [ -f cache/$file ]; then 
+		cache=cache/$file
+	elif [ -f cache/$file.z ]; then 
+		cache=cache/$file.z
+	elif [ -f cache/$file.Z ]; then 
+		cache=cache/$file.Z
+	else
+		cache=cache/$file
+	fi
+	if [ -f $cache -a $cache -nt $2 ]
+	then
+		echo "$1 $cache $MANPAGER"
+	else
+		echo "$1 $2 echo Formatting page, please wait... ; \
+		      nroff -mandoc > $cache; \
+		      gzip_it $cache $cache.gz & \
+		      $MANPAGER $cache && [ -f $cache.gz ] && rm -f $cache"
+	fi
+}
+
+# receives all entries to display, and returns one line per each
+# with man page on system, in the format produced by echo_cmd()
+# 
+# if the entry does not have a man page, then an error message 
+# is displayed
+# 	
+# searches for man pages on directories specified by $MANPATH, and
+# in each existing directory of MANPATH, on sub-dirs man<section>
+# and bsd<section>
+# 
+prmanfiles()
+{
+	local d f
+
+	while [ "$1" ]
+	do
+		done=0
+		for d in $MANPATH
+		do
+			[ -d $d ] || continue
+			cd $d
+			for f in `eval echo "man$SECTIONS/$1.* \
+					     bsd$SECTIONS/$1.*"`
+			do
+				[ -f "$f" ] && {
+					echo_cmd $d $f
+					done=1
+				}
+			done
+		done
+		[ $done = "0" ] && {
+			
+			case "$SECTIONS" in 
+
+				[1-9onlp] )
+					echo 1>&2 \
+"No entry for $1 in section $SECTIONS of the manual"
+					;;
+				"["*"]" )
+					echo 1>&2 \
+"No entry for $1 in sections "\
+`echo $SECTIONS|sed 's/\[\(.*\)\]/\1/;s/./&,/g;s/.$//'`" of the manual"
+					;;
+				* )
+					echo 1>&2 \
+"No manual entry for $1"
+					;;
+			esac
+		}
+		shift
+	done
+}
+
+# display the formatted man pages
+man()
+{
+	local cmd file dir
+
+	prmanfiles $* | while read dir file cmd
+ 	do
+		cd $dir
+ 		case "$file" in
+ 			*.gz | *.z | *.Z )
+ 				gzip -dc $file
+ 				;;
+ 			* )
+				cat $file
+ 				;;
+ 		esac | eval $cmd
+ 	done
+}
+
+# writes only the path of the sources, which would be displayed otherwise
+doprmanfiles()
+{
+	#prmanfiles $* | cut -d ' ' -f 1-2 | tr ' ' /
+
+	local dir file dum
+	prmanfiles $* | while read dir file dum
+	do
+		echo $dir/$file
+	done
+}
+
+help()
+{
+	cat << 'eof'
+usage: man [-adfhktw] [section] [-M path] [-P pager] [-S list]
+           [-p string] name ...
+
+* a : find all matching entries
+  d : print gobs of debugging information
+  f : same as whatis(1)
+  h : print this help message
+  k : same as apropos(1)
+* t : use troff to format pages for printing
+  w : print location of man page(s) that would be displayed
+
+  M path   : set search path for manual pages to `path'
+  P pager  : use program `pager' to display pages
+  S list   : colon separated section list
+* p string : string tells which preprocessors to run
+               e - [n]eqn(1)   p - pic(1)    t - tbl(1)
+               g - grap(1)     r - refer(1)  v - vgrind(1)
+
+* : unimplemented (yet)
+eof
+}
+
+# main()
+
+if [ "$0" = "whatis" ]
+then 
+	common whatis "$*"
+
+elif [ "$0" = "apropos" ]
+then
+	common apropos "$*"
+else
+	while [ "$1" ]
+	do
+		case "$1" in 
+
+			-d)
+				set -x
+				;;
+			-w)
+				func="doprmanfiles"
+				;;
+			-f)
+				func="common whatis"
+				;;
+			-k)
+				func="common apropos"
+				;;
+			[0-9npol] | new | public | old | local)
+				SECTIONS=`echo $1 | cut -c 1`
+				;;
+			-M)
+				shift
+				MANPATH=$1
+				;;
+			-P)
+				shift
+				MANPAGER=$1
+				;;
+			-S)
+				shift
+				SECTIONS="[`echo $1 | tr -d ','`]"
+				;;
+			-*)
+				help
+				exit 1
+				;;
+			*)
+				break
+				;;
+		esac
+		shift
+	done
+	[ "$1" ] || { 
+		case "$SECTIONS" in 
+			[1-9onlp])
+				echo 1>&2 \
+"What manual page do you want from section $SECTIONS?"
+				;;
+			* )
+				echo 1>&2 \
+'What manual page do you want?'
+				;;
+		esac
+		exit 1 
+	}
+	if [ "$MANPATH" = "" ]
+	then 
+		MANPATH=/usr/man
+	else
+		MANPATH=`echo $MANPATH | tr ':' ' '`
+	fi
+	#if [ "`echo $func | cut -d ' ' -f 1`" = "common" ]
+	if [ "${func%% *}" = "common" ]
+	then
+		: ${MANPAGER:="more"}
+	else
+		: ${MANPAGER:="less -s"}
+	fi
+	: ${SECTIONS:='*'}
+	eval ${func:-'man'} "$*" 
+fi
+
+exit $?
+

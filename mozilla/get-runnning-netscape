@@ -1,0 +1,10 @@
+#! /bin/sh
+
+# get-runnning-netscape -- print info about URLS netscape windows are on
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990923
+
+xwininfo -tree -root -display :0 | 
+awk '/^ *0x/ { print "xprop -display :0 -id", $1}' | 
+sh | 
+grep -i -e url -e mozila -e mozilla

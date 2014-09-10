@@ -1,0 +1,59 @@
+#! /bin/sh
+
+# kill-byname -- kill processes by its command line name
+# $Id: kill-byname,v 1.1 1998/09/06 16:46:55 cdua Exp cdua $
+# Carlos Duarte, 980801
+
+##
+## note: psflags might have to change, as also the awk script
+## to process ps output, for sysv like systems
+##
+
+USAGE="\
+usage: $0 [-h] [-n] [-s sig] pattern 
+
+  -h      this help
+  -n      no op
+  -s sig  specify signal to send
+
+kill all processes that match pattern. ask first.
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	do_kill=echo\ kill ;;
+	x-s)	shift; SIG="$1" ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+pattern="$1"
+: ${SIG=TERM}
+psflags=ax
+
+ps $psflags | awk '
+NR == 1 {
+	from = index($0, "COMMAND")
+	if (from == 0)
+		from = 1
+	next
+}
+
+{
+	cmd = substr($0, from)
+	if (cmd ~ /'"$pattern"'/)
+		print $1, cmd
+}' | while read pid cmd; do
+	echo \"$cmd\"? ...\  | tr -d \\012 
+	read ans</dev/tty
+	test "$ans" = "y" && ${do_kill-kill} -$SIG $pid
+done
+exit

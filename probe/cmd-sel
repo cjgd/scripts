@@ -1,0 +1,79 @@
+#! /bin/sh
+
+# cmd-sel -- selects the path for a given command
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 981008/990419
+
+# usage: ./cmd-sel [-m] name1 [name2 ...] [-- tests]
+
+# usage 1 (no tests):
+# 	cmd-sel mawk nawk gawk awk 
+# 		just selects available awk, in order of preference
+# 		(mawk first, awk last)
+# 
+# usage 2 (test as an hint to the best): 
+# 	cmd-sel sed gsed gnused -- %% --version \| grep -i gnu
+# 		selects available sed, using test as a tie breaker
+# 		(altough "sed" appears first, if gsed exists and 
+# 		responds something with "gnu" to "--version", this
+# 		will be selected)
+# 
+# 		%% gets replaced with each name, when testing
+# 
+# usage 3 (test must be passed): 
+# 	cmd-sel mawk nawk gawk awk -- %% --version \| grep -i gnu 
+# 		will select awk that responds ok to given test, but
+# 		will fail if none responds ok, even if any exist
+# 		on path
+# 	
+
+if test "x$1" = "x-m"; then
+	must_test=yes
+	shift
+fi
+
+while test $# -ne 0; do 
+	if test "x$1" = "x--"; then
+		shift
+		break; 
+	fi
+	n="$n $1"
+	shift
+done
+
+if test $# -ne 0; then
+	# has tests to do 
+	for t
+	do
+		if test "$t" = "%%"; then 
+			tst="$tst \$p/\$cmd"
+		else 
+			tst="$tst $t"
+		fi
+	done
+else
+	must_test=
+fi
+
+for p in `echo $PATH | tr : " "`; do 
+	for cmd in $n; do 
+		if test -x "$p/$cmd"; then
+			test "$must_test" = "yes" || best="$p/$cmd"
+			if test $# -eq 0; then
+				# no tests, then this is the best
+				break 2; 
+			else 
+				# if pass test, then is the best
+				# else, remember current best, and keep 
+				# searching
+				eval "exec 2>&1; $tst" >/dev/null && break 2
+			fi
+		fi
+	done
+done
+
+if test "$best" != ""; then
+	echo "$best"
+	exit 0; 
+fi
+exit 1

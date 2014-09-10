@@ -1,0 +1,90 @@
+#! /bin/sh 
+
+# dgrep -- perform a delimeted grep 
+# $Id: dgrep,v 1.1 1998/09/06 23:14:29 cdua Exp cdua $
+# Carlos Duarte, 980722
+
+USAGE="\
+usage: $0 [-hn] -d delim pattern [files]
+
+  -h      this help
+  -d      specify delimeter to use (default: newline)
+  -p      also print delimeter with matched record
+  -r      simply dump all records
+
+example: 
+  dgrep -d '\n\n' word file 
+    find word on a paragraph from file
+    a paragraph is considered to be text, separated by one blank line
+"
+
+DOPRINT="s/@1@.*$//"
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-d)	shift; delim="$1" ;;
+	x-p)	
+		DOPRINT='
+s/@2@.*$//
+s/@1@//g'
+		;;
+	x-r)	DUMP='
+i\
+::::::::::
+#' 	
+		;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+pattern="$1"
+shift
+
+: ${delim='\n'}
+delim="`echo $delim | sed -e 's:/:\\\\/:g' -e 's/@/@@@/g'`"
+pattern="`echo $pattern | sed -e 's:/:\\\\/:g' -e 's/@/@@@/g'`"
+
+#echo "delim: $delim"
+#echo "pattr: $pattern"
+#exit
+
+sed -n '
+s/@/@@@/g
+:chk_delm
+/'"$delim"'/! {
+	${
+		/./!q
+		s/$/@1@x@2@/
+		b chk_pat
+	}
+	x
+	n 
+	s/@/@@@/g
+	H
+	x
+	b chk_delm
+}
+s/'"$delim"'/@1@&@2@/
+: chk_pat
+'"$DUMP"' /^.*'"$pattern"'.*@1@/!b skip
+h
+# print delim?
+# no:  s/@1@.*$//
+# yes: s/@2@.*$//; s/@1@//g
+'"$DOPRINT"'
+s/@@@/@/g
+p
+x
+:skip
+s/^.*@2@//
+b chk_delm
+' "$@"
+
+exit

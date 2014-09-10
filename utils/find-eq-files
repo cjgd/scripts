@@ -1,0 +1,97 @@
+#! /bin/sh
+
+# find-eq-files -- find files that are equal
+# $Id$ 
+# Carlos Duarte, 990131/990216
+
+# usage: find-eq-files [dirs] [find options]
+# example: find-eq-files ~/tmp ~/sources 
+
+dirs="$*"
+test $# -eq 0 && dirs=.
+
+p="`echo $PATH | tr : ' '`"
+
+# finds the best file hasher program available
+# output of these, must be: hash1 [hash2 ...] filename
+# hash my be anything that caracterizes the file contents (length, 
+# signature, etc)
+# 
+# syntax of list is: 
+# cmd [args |script_to_change_output_to: hash1 ... filename]
+sed '/^#/d'<<'eof'|
+du -ab 
+ls -ld |awk '{ print $(NF-4), $NF}'
+md5sum 
+md5 |sed 's/^.*(\([^)]*\)). \(.*\)$/\2 \1/'
+cksum 
+sum 
+wc -c
+eof
+while read cmd args; do
+	for d in $p; do
+		if test -x $d/$cmd; then 
+			set -- $args; args=
+			while test $# -ne 0; do 
+				case "$1" in 
+				"|"*) break ;; 
+				*) args="$args $1"; shift ;; 
+				esac
+			done
+			proc=cat
+			test $# -ne 0 && proc="`echo \"$*\"|cut -c2-`"
+			find $dirs -type f -print |
+			xargs $cmd $args |
+			eval $proc
+			break 2 
+		fi
+	done
+done |
+awk '{ 
+	filename = $NF
+	hash = ""
+	for (i=1; i<NF; i++)
+		hash = hash "_" $i
+	x[hash] = x[hash] filename "-\n-"
+}
+
+END {
+	for (i in x) {
+		n = split(x[i], a, /-\n-/)
+		if (n == 2)
+			continue
+		while (--n) {
+			printf "%s ", a[n]
+		}
+		print ""
+	}
+}' | 
+while read x; do
+	set -- $x
+	while test $# -ne 0; do 
+		x=
+		first=$1; shift
+		echo ============
+		echo $first
+		for other
+		do
+			if cmp $first $other > /dev/null; then
+				echo $other
+			else
+				x="$x $other"
+			fi
+		done
+		set -- $x
+	done
+done |
+sed '
+/^===*$/!b
+:b
+N
+$d
+N
+/^===*\n.*\n===*$/{
+	s/^.*\n//
+	bb
+}'
+exit

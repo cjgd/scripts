@@ -1,0 +1,13 @@
+#! /bin/sh -
+
+# inpath -- check if a file is on path
+# $Id$
+# Carlos Duarte, 960929/980724
+
+echo $PATH | sed 's/:/\
+/g' | awk '!x[$0]++' | while read dir; do 
+	for file; do
+		test -x $dir/$file && echo $dir/$file
+	done
+done
+exit

@@ -1,0 +1,154 @@
+#! /bin/sh
+
+# fn-generate -- generate file names
+# $Id: fn-generate,v 1.1 1998/07/10 17:08:16 cdua Exp cdua $
+# Carlos Duarte, 980710
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hn] nfiles literals ... -f fmts ...
+
+  -h      this help
+  -n      just print the names (do not create the files)
+
+nfiles is the number of names to produce
+literals are literal strings that are output as they are
+fmts have the format -> [rs]nrange:[rs]crange
+  [rs], r for random, s for sequential, if not present defaults to r
+  nrange, stands for numerical range
+    n, or n1-n2 
+  crange, stands for character range
+    c1c2c3r1-r2... like tr(1)
+
+examples: 
+	$0 12 -f8:a-z . -f3:a-z 
+	    generates 12 8.3 dos files, a-z random chars both for name and ext
+	$0 9 __ -fr20-40:a-z __
+	    9 files, prefix-and-suffixed by __, with 20 to 40 random lowers
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd=cat ;;
+	x--)	shift; break ;;
+	x-f)	break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -lt 2; then echo "$USAGE"; exit 1; fi
+
+awk -- '
+function doit(s,	f,c1,r1,r2,c2,cc,n,top,j) {
+	# {r|s} \n range1 \n range2 \n {r|s} \n chars
+	# l \n literal_text
+	split(s, f, "\n")
+	c1 = f[1]
+	if (c1 == "l") {
+		printf "%s", f[2] 
+		return 0
+	}
+	r1 = f[2]+0; 
+	r2 = f[3]+0
+	c2 = f[4]
+	cc = f[5]
+	n = length(cc)
+	if (c1 == "r") 
+		top = int(rand()*(r2-r1+1))+r1
+	else { # c1 is "s" 
+		if (!last_seq)
+			last_seq = r1
+		else if (++last_seq > r2)
+			last_seq = r1
+		top = last_seq
+	}
+	if (c2 == "s") {
+		j=1
+		while (top--) {
+			printf "%s", substr(cc, j, 1)
+			if (++j > n)
+				j=1
+		}
+	} else { # c2 is "r"
+		while (top--) 
+			printf "%s", substr(cc, int(rand()*n)+1, 1)
+	}
+}
+
+function nrange(s,	n) {
+	# [rs] d - d
+	c = substr(s,1,1)
+	if (c == "r" || c == "s") s = substr(s,2)
+	else c = "r"	# default
+	n = split(s, rang, "-")
+	return c "\n" rang[1] "\n" rang[1+(n>=2)]
+}
+
+function crange(s,	n, i, c, cc, j, jj, retv) {
+	# [rs] list c1-c2 ... 
+	cx = substr(s,1,1)
+	if (cx == "r" || cx == "s") s = substr(s,2)
+	else cx = "r"	# default
+	n = length(s)
+	for (i=1; i<=n; i++) {
+		c = substr(s, i, 1)
+		if (i+2<=n && substr(s, i+1, 1) == "-") {
+			i += 2
+			cc = substr(s, i, 1)
+			j = index(ascii, c)
+			jj = index(ascii, cc)
+			if (j != 0 && jj>=j)
+				retv = retv substr(ascii, j, jj-j+1)
+		} else 
+			retv = retv c
+	}
+	return "\n" cx "\n" retv
+}
+
+function arg(s, 	c, retv, fmt, n) {
+	n = split(s, fmt, ":")
+	if (n >= 1)
+		retv = nrange(fmt[1])
+	if (n >= 2)
+		retv = retv crange(fmt[2])
+	return retv
+}
+
+BEGIN {
+ascii=" !\"#$%&'\''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMN\
+OPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
+	srand()
+	n = ARGV[1]+0
+	if (n == 0) {
+		print "\
+warning: number of files is nul, possible error on first arg" | "cat 1>&2"
+		exit 1
+	}
+	z = 0
+	for (i=2; i<ARGC; i++) {
+		s = ARGV[i]
+		if (s ~ /^-f/) {
+			if (length(s)>2)
+				x[z] = arg(substr(s, 3))
+			else 
+				x[z] = arg(ARGV[++i])
+		} else 
+			x[z] = "l\n" s
+		z++
+	}
+	while (n--) {
+		for (i=0; i<z; i++) 
+			doit(x[i])
+		print ""
+	}
+	exit
+}' $*
+
+exit

@@ -1,0 +1,62 @@
+#! /bin/sh 
+
+# fromdos -- convert msdos EOL to unix
+# $Id: fromdos,v 1.2 1997/06/18 16:45:44 cdua Exp cdua $
+# Carlos Duarte, 970618
+
+USAGE="\
+usage: $0 [-hn] {-p [files]} | files ...
+
+  -h      this help
+  -n      no op
+  -p      print to stdout (do not change files)
+  -v      print each filename while it is being done (default)
+  -v-     do not print each filename
+"
+
+DO_V=yes
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	fake=echo ;;
+	x-p)	DO_P=yes ;; 
+	x-v)	DO_V=yes ;; 
+	x-v-)	DO_V=no ;; 
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+if test X$DO_P = Xyes; then 
+	if test x$fake = xecho ; then 
+		echo sed 's/^M$//' "$@" 
+	else 
+		sed 's/$//' "$@"
+	fi
+else
+	# if _must_ accept on extra argument after options
+	if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+	temp='aEdTgHl'
+	vers=1
+	while test -f $temp$vers || test -d $temp$vers; do
+		vers=`expr $vers + 1`
+	done
+	temp=$temp$vers
+	trap -- 'rm -f $temp' EXIT SIGINT
+
+	for i
+	do
+		if test x$fake = xecho; then 
+			echo "sed 's/^M$//' $i > tempfile && mv -f tempfile $i"
+		else
+			test X$DO_V = Xyes && echo changing $i ... | tr -d \\012
+			sed 's/$//' < $i > $temp && rm -f $i && mv $temp $i
+			test X$DO_V = Xyes && echo done. 
+		fi
+	done
+fi
+exit

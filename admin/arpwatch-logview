@@ -1,0 +1,7 @@
+#!/bin/sh
+# Carlos Duarte <cgd@mail.teleweb.pt>, 991223
+perl -ne '
+@a=split /\s+/;
+$a{$a[2]}=sprintf "%-18s %-15s %-9s ", $a[0], $a[1], $a[3];
+END {for(sort keys %a) { print $a{$_}.localtime($_)."\n"}}
+' < ${1-arp.dat}

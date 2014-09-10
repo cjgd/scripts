@@ -1,0 +1,95 @@
+#! /bin/sh 
+
+# wipe-dirs -- remove recursively empty directories
+# $Id: wipe-dirs,v 3.1 1998/07/10 19:17:45 cdua Exp cdua $
+# Carlos Duarte, 970810/980710 
+
+USAGE="\
+usage: $0 [-hnv] path ... 
+
+  -h      this help
+  -n      no op
+
+remove recursively empty directories
+examples: $0 *
+          $0 -n . | sed 's/^/rmdir /' | sh -x 
+"
+
+cmd='xargs -r rmdir'
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd=cat ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+# plano: 
+# usar find -ls
+# depois verificar se cada entry e' directorio ou nao, 
+# depois, por ordem reversa, em cada dir: 
+# 
+# 1. obter todas as entries da dir corrente
+# 2. apagar todas as que forem dirs
+# 3. se a dir corrente nao ficar vazia, marca-la como ficheiro
+# 4. obter proxima dir, goto 1 
+# 
+find "$@" -ls | 
+awk '{
+c = substr($3,1,1)
+if (c != "d")
+	c = "f"
+if ($(NF-1) == "->")
+	name = $(NF-2)
+else
+	name = $NF
+sub(/\/$/, "", name)
+copy = name
+n = gsub("/", "", copy)
+print n, c, name
+}' | 
+sort +0nr +2 | 
+awk '{
+ 	if ($3 == "." || $3 == "..")
+		next 
+	if (substr($3,1,1) != "/" && substr($3,1,2) != "./" && 
+	    substr($3,1,3) != "../")
+		$3 = "./" $3
+	n = split($3, p, "/")
+	path = p[1]
+	for (i=2; i<n; i++)
+		path = path "/" p[i]
+	file = p[n]
+	if (!f[path]) {
+		f[path] = file
+		order[z++] = path
+	} else 
+		f[path] = f[path] "\n" file
+	typ[path "/" file] = $2
+}
+
+END {
+	for (i=0; i<z; i++) {
+		path = order[i]
+		# print path, f[path]; continue
+		n = split(f[path], fn, "\n")
+		not_emtpy=0
+		for (j=1; j<=n; j++) {
+			file = path "/" fn[j]
+			if (typ[file] == "d")
+				print file
+			else
+				not_emtpy++
+		}
+		if (not_emtpy)
+			typ[path] = "f"
+	}
+}' | $cmd 
+exit

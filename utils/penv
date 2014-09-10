@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# penv -- print environ vars only, and not functions
+# $Id$
+# Carlos Duarte, 960729/980802
+
+# usage: ./penv
+#        set | ./penv -f 
+
+(
+if test x"$1" = x-f; then	
+	cat
+else
+	set 
+fi 
+) | sed -n '
+
+:x
+
+# possible start of functions section
+/^.*=() /{
+
+	# save it, on case this is a var like FOO="() "
+	h
+	n
+
+	# next line isnt {, so this was really a var like FOO
+	# print it, and process next line
+	/^{/!{
+		x
+		p
+		x
+		bx
+	}
+
+	# start of a fn section...
+
+#	:z
+#	/\({[^{}]}\)\+/d
+#
+#	N
+#	bz
+
+	# the above works OK, but since after fns, nothing more come
+	# we can just quit
+	q
+}
+p'

@@ -1,0 +1,72 @@
+#! /bin/sh
+
+# ul-grep -- underline grep 
+# $Id: ul-grep,v 1.1 1998/09/06 23:15:17 cdua Exp cdua $
+# Carlos Duarte, 980710
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+UNDER="^"
+SPACE=" "
+
+USAGE="\
+usage: $0 [-h] [-s space] [-u underline] pattern [input-files...]
+
+  -h      this help
+  -s c    use c, as the space character (default: '$SPACE')
+  -u c    use c, as the underliner char (default: '$UNDER')
+  -p      output only lines where pattern lives
+  -1 .. -9
+	  only underlines #ed pattern 
+
+eg: 
+      $0 -p \$USER /etc/passwd
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-s)	shift; SPACE="$1" ;;
+	x-u)	shift; UNDER="$1" ;;
+	x-p)	PAT_NOT_FOUND='d' ;; 
+	x-[1-9])
+		G=`echo x$1|cut -c3` ;; 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+PAT="`echo \"$1\" | sed 's:/:\\\\/:g'`"
+shift
+sed "
+h
+s/$PAT/\\
+&\\
+/${G-g}
+t done
+${PAT_NOT_FOUND-b}
+:done
+s/[^
+]/$SPACE/g
+:again
+/\n\n/b ok
+s/\n./$UNDER\\
+/
+b again
+:ok
+s/\n\n//
+/\n/b again
+x
+p
+x" $*
+
+#exit 0
+exit
+

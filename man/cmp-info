@@ -1,0 +1,19 @@
+#! /bin/sh
+
+# cmp-info -- compare output of two (gnu)info files
+# $Id: cmp-info,v 1.3 1998/07/10 21:34:45 cdua Exp cdua $
+# Carlos Duarte, 960929
+
+
+if test $# -ne 2 ; then
+	echo usage: $0 info-file-1 info-file2 
+	exit 1
+fi
+
+TEMP=/tmp/xpto$$
+
+info -d . --subnode --file $1 --output $TEMP 2>/dev/null
+info -d . --subnode --file $2 --output - 2>/dev/null | diff -w $TEMP -
+
+rm -f $TEMP
+exit

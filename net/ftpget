@@ -1,0 +1,55 @@
+#! /bin/sh 
+
+# ftpget -- get files from ftp site
+# $Id: ftpget,v 1.1 1998/09/06 23:16:45 cdua Exp cdua $
+# Carlos Duarte, 980722
+
+USAGE="\
+usage: $0 [-h] ftpsite ftp-files [destination]
+
+  -h      this help
+
+example: 
+  $0 ftp.ist.utl.pt /pub/gnu/gcc\*    (save to current dir)
+  $0 ftp.x.p.t.o /pub/foo/barfile /tmp/myfile 
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	ftp=cat ;; 
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# at least: ftpsite one-ftp-file
+if test $# -lt 2; then echo "$USAGE"; exit 1; fi
+
+ftpsite=$1; shift
+case $# in
+1)	source=$1 ;;
+2)	source=$1; dest=$2 ;;
+*)
+	cmd=mget 
+	source="$*"
+	# source=$1; shift
+	# while test $# -ne 1; do source="$source $1"; shift; done
+	# dest=$1
+	;;
+esac
+
+case "$source" in *\** | *\?* ) cmd=mget ;; esac
+
+(
+echo user anonymous `whoami`@`hostname`
+echo binary
+echo prompt
+echo ${cmd-get} $source $dest 
+echo bye
+) | ${ftp-ftp -n $ftpsite}
+
+exit

@@ -1,0 +1,22 @@
+#! /bin/sh
+
+# dupexe -- check duped files on path
+# $Id: dupexe,v 1.2 1997/09/06 09:49:44 cdua Exp cdua $
+# Carlos Duarte, 970604
+
+if test x$PATH = x ; then
+	# hard wired path locations
+	PATH=/bin:/usr/bin:/usr/local/bin
+fi
+
+for dd in `echo $PATH | tr : \\\\012 | sort -u | grep -v '^\.$'`; do 
+	test -d $dd || continue
+	dirs="$dirs $dd"
+done
+
+if test x"$dirs" = x ; then
+	echo "no dirs to check for"
+	exit 1
+fi
+
+dupfiles $dirs

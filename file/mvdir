@@ -1,0 +1,69 @@
+#! /bin/sh
+
+# mvdir -- move whole directories 
+# $Id$
+# Carlos Duarte, 961222/980722
+
+USAGE="\
+usage: $0 [-hn] srcs... dest
+
+  -h      this help
+  -n      no op
+  -u user
+	  specifies user for chowing files to
+  -g group
+	  same as -u, but for groups
+  -v      be verbose
+  -0      use -0 option, for gnu tools
+
+copies whole srcs... to dest. all args must be directories.
+
+examples: 
+  $0 /tmp_mount1/home /tmp_mount2/home /home
+      will merge both homes, on a single local /home directory
+  $0 /usr/src . 
+      all dirs on /usr/src to current one
+"
+
+while : ; do
+	case x"$1" in
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	FAKE=yes ;;
+	x-u)	shift; U=$1 ;;
+	x-g)	shift; G=$1 ;;
+	x-v)	VERB=v ;;
+	x-0)	ZERO=0 ;; 
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# source dest, required
+if test $# -lt 2; then echo "$USAGE"; exit 1; fi
+
+P=`pwd`
+eval dest="\$$#"
+
+case "$dest" in /*) my_dest="$dest" ;; *) my_dest="$P/$dest" ;; esac
+
+cmd="cpio -pdma$ZERO$VERB \
+`echo $U : $G | sed 's/ //g; /^:$/d; s/:$//; s/^/-R/'` $my_dest"
+
+while test "$1" != "$dest"; do
+	case "$1" in /*) src_dir="$1";; *) src_dir="$P/$1" ;; esac
+	if test x$FAKE = xyes; then 
+		echo "cd $src_dir && find . -print$ZERO | $cmd"
+	else 
+		if cd "$src_dir" 2>/dev/null 1>&2 ; then 
+			find . -print$ZERO | $cmd
+		else
+			echo skipping $1: not a directory... 1>&2
+		fi
+	fi
+	shift
+done 
+
+exit 

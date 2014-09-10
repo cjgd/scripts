@@ -1,0 +1,42 @@
+#! /usr/bin/python
+
+import sys, cStringIO
+
+P = '/home/dum/.mozilla/firefox/default.spi/prefs.js'
+
+args = sys.argv[1:]
+if len(args) != 1 or not args[0] in ("0", "1"): 
+	print "usage: ff-proxy 1|0"
+	sys.exit(1)
+
+newvalue = args[0]
+
+f = file(P, 'r')
+buf1 = cStringIO.StringIO()
+buf2 = cStringIO.StringIO()
+b = buf1
+changed = 0
+
+
+for line in f: 
+	if line.find('"network.proxy.type"') > 0:
+		b.write('user_pref("network.proxy.type", '+newvalue+');\n')
+		changed = 1
+		continue
+
+	if line.find('"network.proxy.ssl_port"') > 0:
+		b = buf2
+	b.write(line)
+
+f.close()
+
+if not changed:
+	buf1.write('user_pref("network.proxy.type", 1);\n')
+
+f = file(P, 'w')
+f.write(buf1.getvalue())
+f.write(buf2.getvalue())
+f.close()
+
+# user_pref("network.proxy.ssl_port", 8080);
+# user_pref("network.proxy.type", 1);

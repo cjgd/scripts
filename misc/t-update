@@ -1,0 +1,102 @@
+#! /bin/sh
+
+# t-update -- enshortens big termcap/terminfo files, by selecting some terms
+# $Id$
+# Carlos Duarte, 960727/980712
+
+USAGE="\
+usage: $0 [options] term-names...
+
+  -h      this help
+  -n      no op
+  -v, --verbose
+	  show what is being done
+  -n, --just-print
+      --fake
+	  just print commands
+  -x      do shell debug (sh -x)
+  -f terminfo-source
+	  select entries from given file, if not present read from stdin
+  -c termcap-file
+	  write termcap to file, if not given use /etc/termcap
+  -i terminfo-path
+          compile terminfo to the given directory, else use system defaults
+          (like /usr/lib/terminfo)
+  -h --help
+	  gives this help text
+
+   term-names
+	  names of terminals to keep
+
+selects only a few, command line named, terminals
+examples:
+      $0 -c ~/.termcap -i ~/.terminfo -f my_terminfo.src linux vt100 xterm
+        would create privates terminfo dirs, and termcap files, 
+	containing only linux, vt100 and xterm entries
+"
+
+while : ; do
+	case x"$1" in 
+	x-h | x--help)	
+		echo "$USAGE"; exit 1 ;;
+	x-n | x--just-print | x--fake)
+		set -n ;; 
+	x-x)	set -x ;;
+	x-v | x--verbose)
+		verbose=yes ;;
+	x-f)	shift; tisrc=$1 ;;
+	x-c)	shift; tcout=$1 ;;
+	x-i)	shift; tipath=$1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+: ${TIC='tic'}
+
+: ${verbose='no'}
+: ${tisrc=''}
+: ${tcout='/etc/termcap'}
+: ${tipath='/usr/share/terminfo'}
+
+VERB="test $verbose = yes && echo "
+
+TEMP=/tmp/ti$$.$$
+
+{
+	if test -z "$tisrc"
+	then
+		cat
+	else
+		case "$tisrc" in 
+		*.gz | *.Z | *.z)
+			gzip -dc "$tisrc"
+			;;
+		*)
+			cat "$tisrc"
+			;;
+		esac
+	fi
+
+} | {
+	re='\('$1
+	shift
+	for i; do re=$re'\|'$i; done; 
+	re=$re'\)'
+	sed -n ':z;/^#/d;/^\(.*|\)\?'$re'[|:,]/{;:x;p;n;s/^[a-z#].*/&/;tz;bx;}'
+
+} > $TEMP
+
+$TIC -C $TEMP > $tcout
+
+rm -f $tipath/?/*
+
+TERMINFO=$tipath $TIC $TEMP
+
+rm -f $TEMP

@@ -1,0 +1,24 @@
+#! /bin/sh 
+
+# tin-batch-save -- save news articles for later read with tin
+# $Id$
+# Carlos Duarte <cgd@teleweb.pt>, 000225
+
+if test $# -ne 1; then
+	echo "usage: $0 dir-for-temp-newsrc"
+	exit 1
+fi
+
+cd "$1" || exit
+
+# if .newsrc-batch doesn't exist, or older than ~/.newsrc
+# then make it equal to ~/.newsrc 
+#
+make -s -f - <<EOM
+all: .newsrc-batch
+
+.newsrc-batch: $HOME/.newsrc
+	cp -f $HOME/.newsrc .newsrc-batch
+EOM
+
+tin -g news -Q -S -c -f .newsrc-batch

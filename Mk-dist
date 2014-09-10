@@ -1,0 +1,321 @@
+all: 
+	@echo 'type make install to install: '
+	@echo '  admin/exe-strip.pl'
+	@echo '  admin/ldd-check'
+	@echo '  backup/bak-tape'
+	@echo '  calc/factorial'
+	@echo '  calc/pow2'
+	@echo '  calc/primes'
+	@echo '  cjgd/do-export'
+	@echo '  convert/dos2unix.pl'
+	@echo '  devel/any2c.pl'
+	@echo '  devel/chop-c-comments.pl'
+	@echo '  devel/make-targets.sed'
+	@echo '  devel/m4conv.pl'
+	@echo '  file/dos-fn.pl'
+	@echo '  file/empty-dirs.pl'
+	@echo '  file/fn-generate'
+	@echo '  file/fnspaces'
+	@echo '  file/hdtosym'
+	@echo '  file/ls-dup.awk'
+	@echo '  file/ls-today'
+	@echo '  file/move-to-lower'
+	@echo '  file/rel2abs'
+	@echo '  file/renamer.pl'
+	@echo '  file/symtohd'
+	@echo '  file/dir-diff'
+	@echo '  grep/text-grep'
+	@echo '  grep/ul-grep'
+	@echo '  gzip/gunziper'
+	@echo '  gzip/gziper'
+	@echo '  gzip/untar'
+	@echo '  gzip/zblow'
+	@echo '  gzip/gztobz2'
+	@echo '  gzip/grep-zip-entry'
+	@echo '  gzip/anytolz'
+	@echo '  man/cmp-info'
+	@echo '  man/fake-cats'
+	@echo '  man/ln-care'
+	@echo '  man/so-care'
+	@echo '  mtools/fromdisks'
+	@echo '  mtools/mdirs'
+	@echo '  mtools/xcopy'
+	@echo '  multimedia/any-to-au'
+	@echo '  multimedia/img-play.pl'
+	@echo '  multimedia/jpg-opt.pl'
+	@echo '  multimedia/cd-to-mp3'
+	@echo '  net/ppost'
+	@echo '  net/usenet-handle'
+	@echo '  net/suck-massage.pl'
+	@echo '  net/tin-batch-save'
+	@echo '  rcs-utils/rcscmp'
+	@echo '  rcs-utils/rcsextra'
+	@echo '  rcs-utils/rcsmiss'
+	@echo '  rcs-utils/makediffs'
+	@echo '  rcs-utils/mkpatch'
+	@echo '  rcs-utils/rcsmvdir'
+	@echo '  rcs-utils/rcsupdate'
+	@echo '  rcs-utils/rcsrmdir'
+	@echo '  sed/apply-sed'
+	@echo '  stow/check-stow'
+	@echo '  stow/clean-stow'
+	@echo '  stow/remove-stow-conflicts'
+	@echo '  stow/to-stow'
+	@echo '  text/column.awk'
+	@echo '  text/shuffle.awk'
+	@echo '  text/crlf.py'
+	@echo '  time/time-cmd'
+	@echo '  time/tomorrow'
+	@echo '  utils/apply-conv.pl'
+	@echo '  utils/edit-index'
+	@echo '  utils/find-eq-files.pl'
+	@echo '  utils/get-desc.pl'
+	@echo '  utils/growing'
+	@echo '  utils/waitpid.sh'
+	@echo '  cdr/cdburn.sh'
+	@echo '  cdr/cdsize.sh'
+	@echo '  mozilla/about_cache.pl'
+	@echo '  mozilla/ff-proxy'
+	@echo '  mozilla/get-runnning-netscape'
+	@echo '  mozilla/ff'
+	@echo '  mozilla/tb'
+
+install: /cgd/bin/exe-strip.pl /cgd/bin/ldd-check /cgd/bin/bak-tape /cgd/bin/factorial /cgd/bin/pow2 /cgd/bin/primes /cgd/bin/do-export /cgd/bin/dos2unix.pl /cgd/bin/any2c.pl /cgd/bin/chop-c-comments.pl /cgd/bin/make-targets.sed /cgd/bin/m4conv.pl /cgd/bin/dos-fn.pl /cgd/bin/empty-dirs.pl /cgd/bin/fn-generate /cgd/bin/fnspaces /cgd/bin/hdtosym /cgd/bin/ls-dup.awk /cgd/bin/ls-today /cgd/bin/move-to-lower /cgd/bin/rel2abs /cgd/bin/renamer.pl /cgd/bin/symtohd /cgd/bin/dir-diff /cgd/bin/text-grep /cgd/bin/ul-grep /cgd/bin/gunziper /cgd/bin/gziper /cgd/bin/untar /cgd/bin/zblow /cgd/bin/gztobz2 /cgd/bin/grep-zip-entry /cgd/bin/anytolz /cgd/bin/cmp-info /cgd/bin/fake-cats /cgd/bin/ln-care /cgd/bin/so-care /cgd/bin/fromdisks /cgd/bin/mdirs /cgd/bin/xcopy /cgd/bin/any-to-au /cgd/bin/img-play.pl /cgd/bin/jpg-opt.pl /cgd/bin/cd-to-mp3 /cgd/bin/ppost /cgd/bin/usenet-handle /cgd/bin/suck-massage.pl /cgd/bin/tin-batch-save /cgd/bin/rcscmp /cgd/bin/rcsextra /cgd/bin/rcsmiss /cgd/bin/makediffs /cgd/bin/mkpatch /cgd/bin/rcsmvdir /cgd/bin/rcsupdate /cgd/bin/rcsrmdir /cgd/bin/apply-sed /cgd/bin/check-stow /cgd/bin/clean-stow /cgd/bin/remove-stow-conflicts /cgd/bin/to-stow /cgd/bin/column.awk /cgd/bin/shuffle.awk /cgd/bin/crlf.py /cgd/bin/time-cmd /cgd/bin/tomorrow /cgd/bin/apply-conv.pl /cgd/bin/edit-index /cgd/bin/find-eq-files.pl /cgd/bin/get-desc.pl /cgd/bin/growing /cgd/bin/waitpid.sh /cgd/bin/cdburn.sh /cgd/bin/cdsize.sh /cgd/bin/about_cache.pl /cgd/bin/ff-proxy /cgd/bin/get-runnning-netscape /cgd/bin/ff /cgd/bin/tb 
+
+/cgd/bin/exe-strip.pl: admin/exe-strip.pl
+	cp -pf admin/exe-strip.pl $@
+
+/cgd/bin/ldd-check: admin/ldd-check
+	cp -pf admin/ldd-check $@
+
+/cgd/bin/bak-tape: backup/bak-tape
+	cp -pf backup/bak-tape $@
+
+/cgd/bin/factorial: calc/factorial
+	cp -pf calc/factorial $@
+
+/cgd/bin/pow2: calc/pow2
+	cp -pf calc/pow2 $@
+
+/cgd/bin/primes: calc/primes
+	cp -pf calc/primes $@
+
+/cgd/bin/do-export: cjgd/do-export
+	cp -pf cjgd/do-export $@
+
+/cgd/bin/dos2unix.pl: convert/dos2unix.pl
+	cp -pf convert/dos2unix.pl $@
+
+/cgd/bin/any2c.pl: devel/any2c.pl
+	cp -pf devel/any2c.pl $@
+
+/cgd/bin/chop-c-comments.pl: devel/chop-c-comments.pl
+	cp -pf devel/chop-c-comments.pl $@
+
+/cgd/bin/make-targets.sed: devel/make-targets.sed
+	cp -pf devel/make-targets.sed $@
+
+/cgd/bin/m4conv.pl: devel/m4conv.pl
+	cp -pf devel/m4conv.pl $@
+
+/cgd/bin/dos-fn.pl: file/dos-fn.pl
+	cp -pf file/dos-fn.pl $@
+
+/cgd/bin/empty-dirs.pl: file/empty-dirs.pl
+	cp -pf file/empty-dirs.pl $@
+
+/cgd/bin/fn-generate: file/fn-generate
+	cp -pf file/fn-generate $@
+
+/cgd/bin/fnspaces: file/fnspaces
+	cp -pf file/fnspaces $@
+
+/cgd/bin/hdtosym: file/hdtosym
+	cp -pf file/hdtosym $@
+
+/cgd/bin/ls-dup.awk: file/ls-dup.awk
+	cp -pf file/ls-dup.awk $@
+
+/cgd/bin/ls-today: file/ls-today
+	cp -pf file/ls-today $@
+
+/cgd/bin/move-to-lower: file/move-to-lower
+	cp -pf file/move-to-lower $@
+
+/cgd/bin/rel2abs: file/rel2abs
+	cp -pf file/rel2abs $@
+
+/cgd/bin/renamer.pl: file/renamer.pl
+	cp -pf file/renamer.pl $@
+
+/cgd/bin/symtohd: file/symtohd
+	cp -pf file/symtohd $@
+
+/cgd/bin/dir-diff: file/dir-diff
+	cp -pf file/dir-diff $@
+
+/cgd/bin/text-grep: grep/text-grep
+	cp -pf grep/text-grep $@
+
+/cgd/bin/ul-grep: grep/ul-grep
+	cp -pf grep/ul-grep $@
+
+/cgd/bin/gunziper: gzip/gunziper
+	cp -pf gzip/gunziper $@
+
+/cgd/bin/gziper: gzip/gziper
+	cp -pf gzip/gziper $@
+
+/cgd/bin/untar: gzip/untar
+	cp -pf gzip/untar $@
+
+/cgd/bin/zblow: gzip/zblow
+	cp -pf gzip/zblow $@
+
+/cgd/bin/gztobz2: gzip/gztobz2
+	cp -pf gzip/gztobz2 $@
+
+/cgd/bin/grep-zip-entry: gzip/grep-zip-entry
+	cp -pf gzip/grep-zip-entry $@
+
+/cgd/bin/anytolz: gzip/anytolz
+	cp -pf gzip/anytolz $@
+
+/cgd/bin/cmp-info: man/cmp-info
+	cp -pf man/cmp-info $@
+
+/cgd/bin/fake-cats: man/fake-cats
+	cp -pf man/fake-cats $@
+
+/cgd/bin/ln-care: man/ln-care
+	cp -pf man/ln-care $@
+
+/cgd/bin/so-care: man/so-care
+	cp -pf man/so-care $@
+
+/cgd/bin/fromdisks: mtools/fromdisks
+	cp -pf mtools/fromdisks $@
+
+/cgd/bin/mdirs: mtools/mdirs
+	cp -pf mtools/mdirs $@
+
+/cgd/bin/xcopy: mtools/xcopy
+	cp -pf mtools/xcopy $@
+
+/cgd/bin/any-to-au: multimedia/any-to-au
+	cp -pf multimedia/any-to-au $@
+
+/cgd/bin/img-play.pl: multimedia/img-play.pl
+	cp -pf multimedia/img-play.pl $@
+
+/cgd/bin/jpg-opt.pl: multimedia/jpg-opt.pl
+	cp -pf multimedia/jpg-opt.pl $@
+
+/cgd/bin/cd-to-mp3: multimedia/cd-to-mp3
+	cp -pf multimedia/cd-to-mp3 $@
+
+/cgd/bin/ppost: net/ppost
+	cp -pf net/ppost $@
+
+/cgd/bin/usenet-handle: net/usenet-handle
+	cp -pf net/usenet-handle $@
+
+/cgd/bin/suck-massage.pl: net/suck-massage.pl
+	cp -pf net/suck-massage.pl $@
+
+/cgd/bin/tin-batch-save: net/tin-batch-save
+	cp -pf net/tin-batch-save $@
+
+/cgd/bin/rcscmp: rcs-utils/rcscmp
+	cp -pf rcs-utils/rcscmp $@
+
+/cgd/bin/rcsextra: rcs-utils/rcsextra
+	cp -pf rcs-utils/rcsextra $@
+
+/cgd/bin/rcsmiss: rcs-utils/rcsmiss
+	cp -pf rcs-utils/rcsmiss $@
+
+/cgd/bin/makediffs: rcs-utils/makediffs
+	cp -pf rcs-utils/makediffs $@
+
+/cgd/bin/mkpatch: rcs-utils/mkpatch
+	cp -pf rcs-utils/mkpatch $@
+
+/cgd/bin/rcsmvdir: rcs-utils/rcsmvdir
+	cp -pf rcs-utils/rcsmvdir $@
+
+/cgd/bin/rcsupdate: rcs-utils/rcsupdate
+	cp -pf rcs-utils/rcsupdate $@
+
+/cgd/bin/rcsrmdir: rcs-utils/rcsrmdir
+	cp -pf rcs-utils/rcsrmdir $@
+
+/cgd/bin/apply-sed: sed/apply-sed
+	cp -pf sed/apply-sed $@
+
+/cgd/bin/check-stow: stow/check-stow
+	cp -pf stow/check-stow $@
+
+/cgd/bin/clean-stow: stow/clean-stow
+	cp -pf stow/clean-stow $@
+
+/cgd/bin/remove-stow-conflicts: stow/remove-stow-conflicts
+	cp -pf stow/remove-stow-conflicts $@
+
+/cgd/bin/to-stow: stow/to-stow
+	cp -pf stow/to-stow $@
+
+/cgd/bin/column.awk: text/column.awk
+	cp -pf text/column.awk $@
+
+/cgd/bin/shuffle.awk: text/shuffle.awk
+	cp -pf text/shuffle.awk $@
+
+/cgd/bin/crlf.py: text/crlf.py
+	cp -pf text/crlf.py $@
+
+/cgd/bin/time-cmd: time/time-cmd
+	cp -pf time/time-cmd $@
+
+/cgd/bin/tomorrow: time/tomorrow
+	cp -pf time/tomorrow $@
+
+/cgd/bin/apply-conv.pl: utils/apply-conv.pl
+	cp -pf utils/apply-conv.pl $@
+
+/cgd/bin/edit-index: utils/edit-index
+	cp -pf utils/edit-index $@
+
+/cgd/bin/find-eq-files.pl: utils/find-eq-files.pl
+	cp -pf utils/find-eq-files.pl $@
+
+/cgd/bin/get-desc.pl: utils/get-desc.pl
+	cp -pf utils/get-desc.pl $@
+
+/cgd/bin/growing: utils/growing
+	cp -pf utils/growing $@
+
+/cgd/bin/waitpid.sh: utils/waitpid.sh
+	cp -pf utils/waitpid.sh $@
+
+/cgd/bin/cdburn.sh: cdr/cdburn.sh
+	cp -pf cdr/cdburn.sh $@
+
+/cgd/bin/cdsize.sh: cdr/cdsize.sh
+	cp -pf cdr/cdsize.sh $@
+
+/cgd/bin/about_cache.pl: mozilla/about_cache.pl
+	cp -pf mozilla/about_cache.pl $@
+
+/cgd/bin/ff-proxy: mozilla/ff-proxy
+	cp -pf mozilla/ff-proxy $@
+
+/cgd/bin/get-runnning-netscape: mozilla/get-runnning-netscape
+	cp -pf mozilla/get-runnning-netscape $@
+
+/cgd/bin/ff: mozilla/ff
+	cp -pf mozilla/ff $@
+
+/cgd/bin/tb: mozilla/tb
+	cp -pf mozilla/tb $@
+

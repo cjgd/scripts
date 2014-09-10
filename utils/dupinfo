@@ -1,0 +1,22 @@
+#! /bin/sh 
+
+# dupinfo -- check duped info files
+# $Id$
+# Carlos Duarte, 970425
+
+if test x$INFOPATH = x ; then
+	# hard wired info locations
+	INFOPATH=/usr/info:/usr/local/info
+fi
+
+for infodir in `echo $INFOPATH | tr : \\\\012 | sort -u`; do 
+	test -d $infodir || continue
+	dirs="$dirs $infodir"
+done
+
+if test x"$dirs" = x ; then
+	echo "no dirs to check for"
+	exit 1
+fi
+
+dupfiles $dirs

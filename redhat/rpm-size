@@ -1,0 +1,5 @@
+#! /bin/sh
+
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990904
+
+rpm -q -l $* | xargs ls -ald | awk '{s+=$5}END{print s}'

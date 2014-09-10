@@ -1,0 +1,26 @@
+#! /bin/sh
+
+# echo -- defines a function that echoes without a trailing newline
+# $Id$
+# Carlos Duarte, 981007
+
+# usage: . echo 
+
+#verbose=es
+
+if test `echo -n x | wc -l` -eq 0; then
+	function echo_n() { echo -n "$@"; }
+	test y$verbose = yes && echo "echo -n works..."
+elif test `echo x\\\\c | wc -l` -eq 0; then 
+	function echo_n() { echo "$@\c"; }
+	test y$verbose = yes && echo "echo ... \\c works..."
+else 
+	function echo_n() { echo "$@" | tr -d \\012; }
+	test y$verbose = yes && echo "must use tr -d \\012..."
+fi
+
+## test
+echo_n --\>
+echo_n \*
+
+echo ''

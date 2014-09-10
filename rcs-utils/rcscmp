@@ -1,0 +1,37 @@
+#! /bin/sh 
+
+# rcscmp -- check what files differ from latest RCS version
+# 
+# $Id: rcscmp,v 2.1 1998/07/09 02:36:52 cdua Exp cdua $
+# Carlos Duarte, 970514/980707
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] files...
+
+  -h      this help
+
+  Print filenames, of files that actually differ from the
+  contents of the control version current revision
+
+  Examples: 
+    rcscmp RCS/*
+"
+while : ; do
+	case x"$1" in
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+for i 
+do
+	rcsdiff $i >/dev/null 2>&1 || echo $i
+done

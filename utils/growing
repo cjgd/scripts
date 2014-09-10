@@ -1,0 +1,78 @@
+#! /bin/sh
+
+# growing -- watch the growth rate of given files 
+# $Id: growing,v 1.1 1998/09/06 16:46:33 cdua Exp cdua $
+# Carlos Duarte, 970911
+
+temp=/tmp/a1QsW.$$.OiJ
+trap 'rm -f $temp; exit 0' SIGINT
+
+delay=10
+
+USAGE="\
+usage: $0 [-h] [-d delay] files...
+
+  -h      this help
+  -d delay
+	  use delay seconds. if not specified, defaults to $delay
+
+examples: 
+    gzip -9c big > big.gz& compress -c big > big.Z& $0 -d 2 big.*
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-d)	shift; 
+		delay=`echo $1 | awk '
+		{if (NF>=1) x=$1+0; if (x==0) x='$delay'
+		print x}'`
+		;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+echo 0 > $temp
+wc -c /dev/null "$@" | sed '1d; s/\([0-9][0-9]*\).*/& \1/; $d' >> $temp
+
+while :; do
+	sleep $delay
+	wc -c /dev/null "$@" | sed -e 1d -e \$d | awk '
+	BEGIN {
+		delay='"$delay"'
+		tmp="'"$temp"'"
+		getline < tmp
+		total = $1 + delay
+		i=0
+		while ((getline < tmp)) {
+			o_cur[++i] = $1
+			o_tot[i] = $3
+		}
+		close(tmp); 
+		print total > tmp
+		i=0; 
+	}
+
+	{
+		cur_rate = ($1 - o_cur[++i])/delay/1000;  
+		tot_rate = ($1 - o_tot[i])/total/1000;  
+		fmt = $2 ":                  "
+		printf "%.12s %3d [currently: %3d] KB/sec\n", 
+				fmt, 
+				tot_rate,
+				cur_rate 
+		print $0, o_tot[i] > tmp 
+	}
+
+	END {
+		close (tmp)
+	}'
+done
+

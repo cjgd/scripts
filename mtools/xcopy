@@ -1,0 +1,188 @@
+#! /bin/sh 
+
+# xcopy -- copy files to multiple disks
+# $Id: xcopy,v 3.1 1998/10/05 00:08:03 cdua Exp cdua $
+# Carlos Duarte <cgd@mail.teleweb.pt>, 961215/981005
+
+## TODO: perhaps awk code should use a dynamic programming 
+# strategy to reduce recursion levels, and increase speed
+
+## 
+USAGE="\
+usage: $0 [-hn] files ... 
+
+  -h      this help
+  -n      no op
+  -rm     remove files after copying them to disks
+  -d drives
+	  specify drive, or drives
+  -f free_space
+	  specify freespace on destination media
+  -w      wipe out media contents before starting the copy
+  -e      eject disk, after copy is done
+  -m delta 
+	  the search for an optimal solution ends, when a configuration
+	  that sums more than (free_space - delta) is found
+"
+
+FAKE=0
+REMOVE=0
+DRIVES=A
+WIPE=:
+EJECT=:
+AUTOFREE=1
+DELTA=0
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	FAKE=1 ;;
+	x-rm)	REMOVE=1 ;;
+	x-m)
+                DELTA=`echo $1|cut -c3-`
+                if test x"$DELTA" = x; then
+                        shift
+                        DELTA=$1
+                fi
+                ;;
+	x-d)
+                DRIVES=`echo $1|cut -c3-`
+                if test x"$DRIVES" = x; then
+                        shift
+                        DRIVES=$1
+                fi
+                ;;
+	x-f)	
+		FREE=`echo $1|cut -c3-`
+		if test x"$FREE" = x; then
+			shift
+			FREE=$1
+		fi
+		AUTOFREE=0;
+		;;
+	x-w)	WIPE=mdel ;;
+	x-e)	EJECT=eject ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+v=0
+temp=/tmp/xcp$$
+while test -f $temp$v || test -d $temp$v; do
+	v=`expr $v + 1`
+done
+temp=$temp$v
+
+wc -c "$@" /dev/null | 
+sed 'N; $d; P; D' |
+awk '{ print int(($1 - 1)/512+1)*512, $2 }' | sort +0nr > $temp
+trap -- 'rm -f $temp; exit' EXIT SIGINT
+
+while test -s $temp; do
+	drive=`echo $DRIVES|sed 's/^\(.\).*/\1/'`
+	ODRIVES=$DRIVES
+	DRIVES=`echo $DRIVES|sed 's/^\(.\)\(.*\)/\2\1/'`
+
+	# get free space on a diskette on 512 blocks (rounded down)
+	if test $AUTOFREE -eq 1; then 
+		FREE=`mdir ${drive}: | awk '
+		/bytes free/ {
+			sub(/bytes free/, ""); 
+			gsub(/[ \t]/, ""); 
+			print int((0+$1)/512) 
+		}'`
+	fi
+
+	files=`awk '{
+		size[++n] = $1; # size, name: 1 .. n 
+		name[n] = $2
+	}
+	END {
+		tmpf = "'"$temp"'"
+		L = '"$FREE"'+0
+		delta = '"$DELTA"'+0
+		done = 0
+		curr = 0
+		ci = 1
+
+		for (i=1; i<=n; i++) {
+			ba[i] = i
+			sum += size[i]
+		}
+		ba[i] = -1
+
+		if (sum > L) {
+			ba[1] = -1
+			solve(1)
+		}
+
+		for (i=1; i<=n; i++) {
+			if (ba[i] == -1)
+				break; 
+			if (i == ba[i])
+				print name[i]
+			else
+				print size[i], name[i] > tmpf
+		}
+		for (; i<=n; i++)
+			print size[i], name[i] > tmpf
+		printf "" > tmpf
+		close(tmpf)
+	}
+
+# L		best to achieve
+# curr		current achieved value
+# best		current best 
+# ca[]		array of indexed that compose current value (curr)
+# ci		index of ca[] array
+# ba[] 		array for best achieved (best), from ba[1] .. ba[i] == -1
+
+	function solve(k, 	i,j) {
+		for (i=k; !done && i<=n; i++) {
+			curr += size[i]
+			ca[ci++] = i
+			ca[ci] = -1
+
+			if (curr <= L && curr > best) {
+				best = curr
+				for (j=1; j<=ci; j++)
+					ba[j] = ca[j]
+			}
+
+			if (curr <= L && curr >= (L-delta)) {
+				done = 1
+			} else if (curr < L && i < n)
+				solve(i+1)
+
+			ci--
+			curr -= size[i]
+		}
+	}' $temp`
+
+	if test $FAKE -eq 1; then 
+		echo $WIPE ${drive}:
+		echo mcopy $files ${drive}:
+		test $REMOVE -eq 1 && echo rm -f $files
+	else 
+		$WIPE ${drive}:
+		if mcopy $files ${drive}: ; then 
+			test $REMOVE -eq 1 && rm -f $files
+		fi
+	fi
+
+	test -s $temp || break
+
+	if test $ODRIVES = $DRIVES; then
+		$EJECT 
+		echo Replace disks and press return... 
+		read ans || break
+	fi
+done
+
+exit 0

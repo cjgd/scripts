@@ -1,0 +1,9 @@
+#! /bin/sh
+
+test "$(id -u)" = 0 && exec su -c "$0 $@" dum
+if test "$(id -u)" != 502; then
+	echo must run as dum
+	exit 2
+fi
+exec /opt/firefox-*/firefox "$@"
+

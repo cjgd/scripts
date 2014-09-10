@@ -1,0 +1,60 @@
+#! /bin/sh
+
+# rcsextra -- check for files being revisioned, that doesnt exist
+# $Id: rcsextra,v 3.1 1998/07/09 02:38:01 cdua Exp cdua $
+# Carlos Duarte, 971122
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] [-q] [-n] [dirs...]
+
+  -h      this help
+  -q      quiet message, only output filename 
+  -n      show what would be done, without doing it
+
+  find files x,v that do not has a corresponding x
+
+  example: 
+    rcsextra 
+    rcsextra -q
+"
+
+CMD=sh
+while : ; do
+	case x"$1" in
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-q)	Q=Q ;;
+	x-n)	CMD=cat ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+QQ="echo & is being revisioned and does not exist"
+test x$Q != x && QQ="echo &"
+
+if test $# -eq 0; then 
+	F="./* ./.*"
+	test -d ./RCS && F="$F ./RCS/* ./RCS/.*"
+else
+	for d
+	do
+		test -d $d || continue
+		F="$F $d/* $d/.*"
+		test -d $d/RCS && F="$F $d/RCS/* $d/RCS/.*"
+	done
+fi
+
+find $F -prune -type f -print 2>/dev/null | sed '
+/,v$/!d
+s@^\(.*/[^/]*\),v$@if test -f \1; then \
+:\
+else\
+'"$QQ"'\
+fi@
+s:^\(if.*\)/RCS/\(.*then\):\1/\2:
+' | $CMD

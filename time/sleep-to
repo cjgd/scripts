@@ -1,0 +1,56 @@
+#! /bin/sh
+
+# sleep-to -- sleep until a given hour
+# $Id: sleep-to,v 1.1 1997/05/20 02:55:54 cdua Exp cdua $
+# Carlos Duarte, 970520
+
+USAGE="\
+usage: $0 [-h] until-hours
+
+  -h      this help
+
+examples:
+   $0 24:00                 sleeps until midnight
+   $0 18:00:30              sleeps until 18:00:30
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+if test $# -ne 1; then echo "$USAGE"; exit 1; fi
+
+(echo $1; date; ) | sed '
+s/.*\([0-9][0-9]:[0-9][0-9]:[0-9][0-9]\).*/\1/
+tb
+
+/[0-9][0-9]*:[0-9][0-9]*:[0-9][0-9]*/ba
+/[0-9][0-9]*:[0-9][0-9]*/{;s/$/:0/;ba;}
+/[0-9][0-9]*/s/$/:0:0/
+
+:a
+s/^/:/
+s/$/:/
+s/[0-9][0-9]*/0&/g
+s/[0-9]*\([0-9][0-9]\)/\1/g
+s/^.//
+s/.$//
+
+:b
+s/:/ 60 60 * * /
+s/:/ 60 * + /
+s/$/ + /
+
+$a\
+-\
+p
+' | dc | while read x; do 
+	sleep $x 
+done

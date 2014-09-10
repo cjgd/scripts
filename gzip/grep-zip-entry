@@ -1,0 +1,9 @@
+#! /bin/sh
+# Carlos Duarte, 060105
+
+pat="$1"
+shift
+for i
+do
+	zipinfo -1 "$i" | grep -q "$pat" && echo "$i"
+done

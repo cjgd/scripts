@@ -1,0 +1,211 @@
+#! /bin/sh 
+
+# usenet-handle -- an attempt to canonify the names of faqs, howtos, etc... 
+# $Id: usenet-handle,v 1.1 1997/10/04 01:19:49 cdua Exp cdua $
+# Carlos Duarte, 971004/971004
+
+trap eval\ 'rm -rf $temp' EXIT
+
+if test $# -eq 0; then
+	echo usage: $0 usenet_files ... 
+	exit 1
+fi
+
+if echo "$@" | grep / > /dev/null; then
+	echo you should use only file names on current directory
+	exit 2
+fi
+
+#temp=/tmp/uh.$$.
+temp=.uh.$$.
+x=1
+while test -d $temp$x  || test -s $temp$x ; do
+	x=`expr $x + 1`
+done
+
+temp=$temp$x
+mkdir $temp
+
+# copy each named file to $temp
+# coped files will be x.1 x.2 ... and will have head striped until
+# /^archive-name/, failing this, the whole file is copied
+x=1
+for i; do
+	sed '/^[Aa]rchive-[Nn]ame:/!d; :a; n; ba' < $i > $temp/x.$x
+	echo $i ' -> ' x.$x
+	test -s $temp/x.$x || cp -f $i $temp/x.$x
+	rm -f $i
+	x=`expr $x + 1`
+done
+
+# extract conversion list on the end of this same file, translate
+# it to a sed script file ($temp/.s1) to be used in the name 
+# transforming phase
+sed -n '
+/^## ABBRS/!d
+
+:next
+n
+
+/./!b next
+
+s/^[ 	]*//
+s/[ 	]*$//
+
+s/\./\\./g
+
+s:^\([^ 	]*\)[ 	][ 	]*:s/\1/:
+s:$:/:
+p
+
+b next' < $0 > $temp/.s1
+
+###
+# produce lots of 'mv $temp/x.1 file-name' and pass them to shell
+# here name transformation should be made acording archive name
+# transformation rules comes in sed file script .s1
+#
+head -v -n 1 $temp/x.* | sed -n -e '
+
+# fetch SOURCE and DEST names (TO will be changed)
+: fetch
+
+# source
+s/==> //
+s/ <==//
+h
+n
+
+# process archive name 
+# pat space: archive name to transform
+# hold buf : source name 
+/^[Aa]rchive-[Nn]ame:/!b no_arch 
+y/	/ /
+s/ *$//
+s/^.* //
+s:/:@:g
+s/@part\([0-9][0-9]*\)$/@\1/
+s/@\([0-9]\)$/@0\1/
+s/@\([^@]*\)$/.\1/
+s/@/-/g
+
+b transf
+
+: no_arch
+/^NAME:/b na1
+
+g
+s:^.*/::
+
+b do_cmd
+
+:na1
+
+s/^NAME: //
+
+b do_cmd
+
+: transf
+s/linux-howto.//
+' -f $temp/.s1 -e '
+
+# produce commands to shell  execute
+# hold buf: source
+# pat space: dest
+: do_cmd
+x
+G
+s/\n/ /
+s/^/echo mv /
+p
+s/^echo //
+p
+
+# go to next record
+: next 
+
+n
+n
+b fetch 
+' | sh
+
+exit 
+
+## ABBRS - format : [space] from_name space to_name [space]
+
+
+C++-faq-libraries 			c++libs
+
+assembly-language-x86-general		asm-x86
+assembly-language-x86.microsoft		asm-x86.ms
+assembly-language-x86.borland		asm-x86.borl
+assembly-language-x86			asm-x86
+
+calendars-faq				cal-faq
+computer-lang-awk			awk
+cryptography-faq			crypto
+editor-faq-vi				vi
+electrical-wiring			wiring
+european-union-basics			EU
+ftp-list-sitelist			ftp-sites
+internet-tcp-ip.resource		tcp-ip
+mail-mailing-lists			mail-lists
+mail-setup-unix				mail-soft
+net-privacy				net-priv
+num-analysis-faq			numerics
+periodic-postings			posts
+sci-math-faq				math
+space.addresses				space.addr
+space.astronaut				space.astr
+space.controversy			space.ctrv
+space.data				space.data
+space.groups				space.grps
+space.intro				space.intr
+space.launchers				space.laun
+space.math				space.math
+space.net				space.net
+space.new_probes			space.new
+space.probe				space.probe
+space.references			space.ref
+space.schedule				space.sched
+unix-faq-faq.contents			unix.toc
+unix-faq-faq				unix
+unix-faq-programmer.faq			unix.prog
+unix-faq-shell.csh-whynot		csh-whynot
+unix-faq-shell.shell-differences	shell-diffs
+unix-faq-shell.intro			unix.intro
+unix-faq-shell.zsh			zsh
+unix-faq.loginataka			loginataka
+windows-emulation.wine			wine
+
+compilers-free				compilers
+compression-faq				compression
+
+Benchmarking				Bench
+CD-Writing				CD-wrt
+Commercial				Commerc
+DOS-to-Linux				DOS-to-Lx
+Installation				Install
+Intranet-Server				Intra-Serv
+Keyboard-and-Console			Keyb-Cons
+Optical-Disk				Opt-Disk
+Reading-List				Read-Lst
+SCSI-Programming			SCSI-Prog
+Serial-Programming			Serial-Prog
+Sound-Playing				Snd-Play
+User-Group				User-Grp
+VMS-to-Linux				VMS-to-Lnx
+XFree86-Video-Timings			XFree86-VT
+shadow-password				shadow-pw
+
+computer-lang-java.programmers-faq	java-prog
+computer-lang-java-faq			java-faq
+textosgml-faq				sgml-faq
+
+finding-addresses			find-addrs
+mail-college-email			col-email
+realtime-computing			realtime
+unix-faq.socket				socket
+windows-win95-faq			win95
+
+graphics.colorspace-faq			color-faq

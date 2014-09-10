@@ -1,0 +1,9 @@
+-m
+-v ,v$
+-v \.editindex$
+-v \.rcsmiss$
+-v \.exrc$
+-v RCS$
+-v Makefile$
+-f INDEX
+.

@@ -1,0 +1,58 @@
+#! /bin/sh
+
+# fnspaces -- replace spaces on file names 
+# $Id: fnspaces,v 1.2 1998/07/10 19:12:28 cdua Exp cdua $ 
+# Carlos Duarte, 971027/980709
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] [-n] [-s seq] [-c c] files...
+
+  -h      this help
+  -n      no op
+  -v      be verbose
+  -r rpl  use rpl, as the replacing string, instead '_'
+  -s spc  use spc, as the sequence to replace, instead ' ' 
+
+replace spaces on filenames, per _ 
+"
+
+space=' '
+repl='_'
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	DONT=x ;;
+	x-v)	VERB=x ;;
+	x-r)	shift; repl="$1" ;;
+	x-s)	shift; space="$1" ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+## if _must_ accept on extra argument after options
+#if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+for source
+do
+	case "$source" in 
+	*"$space"*) 
+		dest=`echo "$source" | sed "s/$space/$repl/g"`
+		if test -f "$dest" ; then	
+			echo warning: "$dest" already exists, skipping... 1>&2 
+			continue
+		fi
+		test X$VERB != X && echo mv "$source" "$dest"
+		test X$DONT  = X && mv "$source" "$dest"
+		;;
+	esac
+done
+
+#exit 0
+exit
+

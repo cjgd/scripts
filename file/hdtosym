@@ -1,0 +1,73 @@
+#! /bin/sh
+
+# hdtosym -- convert hard links to symlinks
+# $Id: hdtosym,v 1.2 1998/07/10 19:13:18 cdua Exp cdua $
+# Carlos Duarte, 970929/980709
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hn] files...
+
+  -h      this help
+  -n      no op
+  -v      be verbose
+
+Produce output to feed shell, that converts hard links to symbolic links.
+Files that dont hard link to any other listed, are ignored.
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd=cat ;; 
+	x-v)	verb=1 ;; 
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+ls -1di $* | sort -n | awk '
+
+BEGIN {
+	state = 0
+	verb = '"${verb-0}"'
+}
+
+state == 0 {
+	state++; 
+	prev_inum = $1
+	prev_name = $2
+	next; 
+}
+
+state == 1 {
+	if ($1 == prev_inum)
+		state++; 
+	else {
+		prev_inum = $1
+		prev_name = $2
+		next
+	}
+}
+
+state == 2 {
+	if ($1 != prev_inum) {
+		state = 1; 
+		prev_inum = $1
+		prev_name = $2
+		next;
+	}
+
+	if (verb) print "echo", "rm -f", $2 "\\; ln -s", prev_name, $2
+	print "rm -f", $2 "; ln -s", prev_name, $2
+}' | ${cmd-sh}
+
+#exit 0
+exit

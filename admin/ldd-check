@@ -1,0 +1,67 @@
+#! /bin/sh 
+
+# ldd-check -- performs checks on ldd output
+# $Id$
+# Carlos Duarte, 970520/980906
+
+
+USAGE="\
+usage: $0 [-h] pattern [bindirs...]
+
+  -h      this help
+  pattern pattern to search for on ldd output
+  bindirs directories to search for binaries, like /bin. 
+
+  if bindirs not given, PATH is used to obtain directories
+
+  examples:
+    $0 statically    
+           searches all statically linked executables on path
+    $0 curses /usr/games       
+           searches all executables on /usr/games linked with curses
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+pattern="$1"
+shift
+
+if test $# -gt 0; then 
+	for d
+	do
+		test -d $d && D=$D\ $d/
+	done
+else
+	for d in `echo $PATH | tr : \\\\012 | sort -u `
+	do
+		test -d $d && D=$D\ $d/
+	done
+fi
+
+find --version 2>&1 | grep GNU >/dev/null && maxdepth="-maxdepth 1"
+
+find $D $maxdepth -follow -type f -perm -100 -print \
+  | xargs file -L \
+  | grep -w ELF \
+  | cut -d: -f1 \
+  | xargs ldd \
+  | sed '
+/^	/{
+	H
+	$!d
+}
+
+x
+/'"$pattern"'/!d'

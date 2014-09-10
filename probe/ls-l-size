@@ -1,0 +1,33 @@
+#! /bin/sh
+
+# ls-l-size -- 
+#	output field number (1 based) of ls -l output, that 
+#	shows the file size
+# 
+# $Id$
+# Carlos Duarte, 970523/981012
+
+ls -l /etc/passwd | awk '
+BEGIN {
+	x["Jan"] = 1; 
+	x["Feb"] = 1; 
+	x["Mar"] = 1; 
+	x["Apr"] = 1; 
+	x["May"] = 1; 
+	x["Jun"] = 1; 
+	x["Jul"] = 1; 
+	x["Aug"] = 1; 
+	x["Sep"] = 1; 
+	x["Oct"] = 1; 
+	x["Nov"] = 1; 
+	x["Dec"] = 1; 
+}
+{ 
+	for (i=1; i<=NF; i++)
+		if (x[$i] == 1) {
+			print i-1
+			break
+		}
+}'
+
+exit 0

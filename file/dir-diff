@@ -1,0 +1,56 @@
+#! /bin/sh
+# Carlos Duarte, 021229/030825
+
+# usage: dir-diff dir1 dir2
+
+SEDCMD=""
+while :; do 
+	case $1 in
+	-e)	SEDCMD="$SEDCMD;$2"; shift 2; continue ;; 
+	-*)	echo "$1: unknown flag, usage: dir-diff [-e sedcmds] dir1 dir2"; exit ;;
+	*)	break ;;
+	esac
+done
+SEDCMD="$(echo "$SEDCMD" | sed 's/^;*//; s/;*$//')"
+#echo "$SEDCMD"; exit
+
+if test $# -ne 2; then
+	echo "usage: dir-diff [-e sed-cmds] dir1 dir2"
+	exit 1
+fi
+
+for dir 
+do
+	test -d "$dir" && continue
+	echo "$dir does not exist."
+	exit 1
+done
+
+if test "$RANDOM" = "$RANDOM"; then	
+	echo '$RANDOM var must work for this script to run'
+	exit 1
+fi
+
+temp=/tmp/dd.$$
+d1=$temp.$RANDOM
+while test -f $d1 || test -d $d1 ; do
+	d1=$temp.$RANDOM
+done
+d2=$temp.$RANDOM
+while test -f $d2 || test -d $d2 ; do
+	d2=$temp.$RANDOM
+done
+
+# when dir diffing these /tmp/1 /usr/tmp/1, must strip heading path 
+# from find output. eg: /tmp/1/a.txt  => a.txt ; /usr/tmp/1/dir/A => dir/A
+#
+x1=`echo "$1"|sed 's/\/*$//'`; n1=`expr length "$x1" + 2`
+x2=`echo "$2"|sed 's/\/*$//'`; n2=`expr length "$x2" + 2`
+if test "$SEDCMD" != ""; then 
+	find "$x1" -print | cut -c$n1- | sed 's/\.\(gz\|bz2\)$//' | sed -e "$SEDCMD" | sort > $d1
+else
+	find "$x1" -print | cut -c$n1- | sed 's/\.\(gz\|bz2\)$//' | sort > $d1
+fi
+find "$x2" -print | cut -c$n2- | sed 's/\.\(gz\|bz2\)$//' | sort > $d2
+diff $d1 $d2
+rm $d1 $d2

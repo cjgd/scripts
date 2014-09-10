@@ -1,0 +1,19 @@
+#! /bin/sh
+
+# comp-info -- compress info files on system
+# $Id: comp-info,v 1.3 1998/07/12 18:21:56 cdua Exp cdua $
+# Carlos Duarte, 960902/961215
+
+#find /usr/info \
+#	! -name dir \
+#	! -regex '.*\.gz$' \
+#	-size +1k \
+#	-type f \
+#	-print  | xargs gzip -v 
+
+find /usr/info \
+	! -name dir \
+	! -name "*.gz" \
+	-size +1k \
+	-type f \
+	-print0 | xargs -0 --no-run-if-empty gzip -v

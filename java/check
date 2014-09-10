@@ -1,0 +1,284 @@
+#! /usr/bin/perl
+
+# check -- checks java sources for errors, currenly very limited
+# cgd, 020318
+
+use strict; 
+use Getopt::Std; 
+
+use constant TOK => 0; 
+use constant VAL => 1; 
+use constant SAV => 2; 
+use constant CUR => 3; 
+use constant LNN => 4; 
+use constant ARG => 5; 
+
+use constant SPACE => 0; 
+use constant OPEN_BLOCK => 1; 
+use constant CLOSE_BLOCK => 2; 
+use constant OPEN_SQ => 3; 
+use constant CLOSE_SQ => 4; 
+use constant OPEN_PAREN => 5; 
+use constant CLOSE_PAREN => 6; 
+use constant COMMENT => 7; 
+use constant STRING => 8; 
+use constant NUMERIC => 9; 
+use constant CONT => 10; 
+use constant SYMBOL => 11; 
+use constant NEWLINE => 13; 
+use constant SEMICOMMA => 14; 
+use constant UNREC => 15; 
+use constant BAD_STRING => 16; 
+use constant BAD_COMMENT => 17; 
+use constant IDENTIFIER => 18; 
+use constant CHAR => 19; 
+
+@ARGV==0 and do {
+	print "usage: $0 java-files...\n"; 
+	exit(1);
+}; 
+for my $fname (@ARGV) {
+	check($fname); 
+}
+exit; 
+
+###########################
+
+sub check {
+	my ($file, $x); 
+	local *F; 
+	if (@_) {
+		$file = shift; 
+		open F, $file or die "$file: $!"; 
+	} else {
+		$file = "<stdin>"; 
+		*F = \*STDIN; 
+	}
+	local *wfunc = sub {
+		my $reason = shift; 
+		local $_; 
+		my $app; 
+		if ($x) {
+			$_ = sprintf "%s:%s:%d:%s", 
+				$reason, $file, 
+				$x->[LNN], 
+				$x->[SAV]; 
+			$app = sprintf "%*s^\n", length($_)-length($x->[CUR])-1;
+		} else {
+			$_ = sprintf "%s:%s:EOF", $reason, $file; 
+		}
+		y/\t/ /; 
+		s/\n*$/\n/s; 
+		print; 
+		$app and print $app; 
+	};
+	sub w { &wfunc(@_) }
+
+	printf "Checking file %s...\n", $file;
+	for (;;) {
+		$x = next_token(); 
+		if (not defined $x) {
+			last; 
+		}
+		my ($tok, $val) = ($x->[TOK], $x->[VAL]); 
+		# ignore these tokens at start...
+		if ($tok == SPACE or 
+		    $tok == NEWLINE or
+		    $tok == SEMICOMMA) {
+			next; 
+		}
+		# unrecognized tokens
+		if ($tok == UNREC) {
+			w "UNRECOGNIZED TOKEN--$val"; 
+			next; 
+		}
+		if ($tok == BAD_STRING) {
+			w "RUNAWAY STRING (ln$x->[ARG]?)"; 
+			next; 
+		}
+		if ($tok == BAD_COMMENT) {
+			w "RUNAWAY COMMENT (ln$x->[ARG]?)"; 
+			next; 
+		}
+		# back slash at the end
+		if ($tok == CONT) {
+			my $y = next_token();
+			$y and $y->[TOK] == NEWLINE and next; 
+			w "TRASH AFTER \\"; 
+			next_token_back();
+			next;
+		}
+
+		# spit out comments 
+		if ($tok == COMMENT) {
+			$_ = strip_cmnt($x->[VAL]); 
+			if (s/^e:\s*//i or s/^expect(|s|ed):\s*//i) { 
+				print $_, "\n"; 
+			}
+		}
+	}
+	*F ne *STDIN and close F; 
+}
+
+sub tok {
+	my ($x,$tok,$val) = @_; 
+	$x->[TOK] = $tok; 
+	$x->[VAL] = $val; 
+}
+
+my ($sav_line, $cur_line);
+sub __next_token {
+	local $_; 
+	if ($cur_line ne "") {
+		$_ = $cur_line; 
+	} else {
+		$_ = <F>; 
+		defined $_ or return undef; 	# end of file
+		$sav_line = $_; 
+	}
+	my $x = []; 
+	if (s/^\n//) { tok($x, NEWLINE, $&); 
+	} elsif (s/^[ \t]+//) { tok($x, SPACE, $&); 
+	} elsif (s/^;//) { tok($x, SEMICOMMA, $&); 
+	} elsif (s/^\{//) { tok($x, OPEN_BLOCK, $&); 
+	} elsif (s/^\}//) { tok($x, CLOSE_BLOCK, $&); 
+	} elsif (s/^\[//) { tok($x, OPEN_SQ, $&); 
+	} elsif (s/^\]//) { tok($x, CLOSE_SQ, $&); 
+	} elsif (s/^\(//) { tok($x, OPEN_PAREN, $&); 
+	} elsif (s/^\)//) { tok($x, CLOSE_PAREN, $&); 
+	} elsif (s/^'[^']+'//) { tok($x, CHAR, $&);
+	} elsif (s/^\/\/.*//) { tok($x, COMMENT, $&); 
+	} elsif (s/^"//) { 
+		if (s/^"//) {
+			tok($x, STRING, ""); 
+		} else {
+			# find until next non-backslashed "
+			my $line_nr = $.; 
+            while (!/[^\\]"/s) {
+				if (eof) {
+					tok($x, BAD_STRING, '"'); 
+					$_="";
+					$x->[ARG] = $line_nr; 
+					goto RET_TOK; 
+				}
+				my $new = <F>; 
+				$_ .= $new; 
+				$sav_line .= $new; 
+			}
+			s/^(.*?[^\\])"//s; 
+			tok($x, STRING, $1); 
+		}
+	} elsif (s/^\/\*//) { 
+		if (s/^\*\///) {
+			tok($x, COMMENT, ""); 
+		} else {
+			# find until next non-backslashed */
+			my $line_nr = $.; 
+            while (!/\*\//s) {
+				if (eof) {
+					tok($x, BAD_COMMENT, '"'); 
+					$_="";
+					$x->[ARG] = $line_nr; 
+					goto RET_TOK; 
+				}
+				my $new = <F>; 
+				$_ .= $new; 
+				$sav_line .= $new; 
+			}
+			s/^(.*?[^\\])\*\///s; 
+			tok($x, COMMENT, $1); 
+		}
+	} elsif (s/^\\//) { tok($x, CONT, $&); 
+	} elsif (s/^[0-9]+\.?[0-9]*//) { tok($x, NUMERIC, $&); 
+	} elsif (s/^[0-9a-zA-Z_.]+//) { tok($x, IDENTIFIER, $&); 
+	} elsif (s/^[:?!=><\+\/*%,|-]+//) { tok($x, SYMBOL, $&); 
+	} else {
+		s/.//; 
+		tok($x, UNREC, $&); 
+	}
+RET_TOK: 
+	$cur_line = $_; 
+	$x->[CUR] = $cur_line; 
+	$x->[SAV] = $sav_line; 
+	$x->[LNN] = $.; 
+	return $x; 
+}
+
+my (@toks, $toks_ix); 
+sub next_token {
+	$toks_ix < @toks and return $toks[$toks_ix++]; 
+	my $x = __next_token(); 
+	push @toks, $x; 
+	@toks>64 and shift @toks; 
+	$toks_ix=@toks; 
+	return $x; 
+}
+sub next_token_back {
+	$toks_ix--; 
+}
+sub next_token_reset {
+	@toks=(); 
+	$toks_ix=@toks; 
+}
+sub next_token_rewind {
+	$toks_ix = 0; 
+}
+
+sub next_arg {
+	my $x = next_token(); 
+	defined $x or return [undef];  ## end of file
+	my $tok = $x->[TOK]; 
+
+	if (@_ == 0 ) { 
+		# no tokens to find
+		$tok == OPEN_BLOCK and return [$x, @{ next_arg(CLOSE_BLOCK) }]; 
+		$tok == OPEN_PAREN and return [$x, @{ next_arg(CLOSE_PAREN) }]; 
+		$tok == OPEN_SQ and return [$x, @{ next_arg(CLOSE_SQ) }]; 
+		return [$x]; 
+	}
+
+	my $findtok = shift; 
+	my @r; 
+	while ($tok != $findtok) {
+		push @r, $x; 
+		$x = next_token(); 
+		defined $x or last; 
+		$tok = $x->[TOK]; 
+
+		if ($tok == OPEN_BLOCK) {
+			push @r, @{ next_arg(CLOSE_BLOCK) }; 
+		} elsif ($tok == OPEN_PAREN) {
+			push @r, @{ next_arg(CLOSE_PAREN) }; 
+		} elsif ($tok == OPEN_SQ) { 
+			push @r, @{ next_arg(CLOSE_SQ) }; 
+		}
+	}
+	push @r, $x; 
+	return \@r; 
+}
+
+sub skip {
+	my $tok = shift; 
+	my $y;
+	do { $y = next_token() } while $y and $y->[TOK] == $tok; 
+	$y and $y->[TOK] != $tok and next_token_back(); 
+}
+
+sub skip_to {
+	my $tok = shift; 
+	my $y;
+	do { $y = next_token() } while $y and $y->[TOK] != $tok; 
+	return $y; 
+}
+
+sub strip_cmnt {
+	local $_ = shift; 
+	if (s,^/\*,,) {
+		s,\*/$,,; 
+		return $_;
+	}
+	s,^//,,;
+	s/^\s*//; 
+	s/\s*$//; 
+	return $_; 
+}

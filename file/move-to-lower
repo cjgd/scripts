@@ -1,0 +1,79 @@
+#!/bin/sh
+
+# move-to-lower -- rename files to lower/upper case...
+# $Id: move-to-lower,v 1.3 1998/07/10 19:14:27 cdua Exp cdua $
+# Carlos Duarte, 960904/960904
+
+# usage: 
+#	move-to-lower * 
+#	move-to-upper * 
+# or
+#	move-to-lower -r .
+#	move-to-upper -r .
+#
+#	move-to-any -u	; force move to upper 
+#	move-to-any -l	; force move to lower 
+#	
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-n] [-r] [-h] files...
+
+  -n      do nothing, only see what would be done
+  -r      recursive (use find)
+  -h      this message
+  -u      force to upper 
+  -l      force to lower
+  files   files to remap to lower case
+
+converts filename from lower to upper case, or vice-versa. eg: 
+    $0 -n *              (see if everything is ok, then...)
+    $0 *                 
+    $0 -r .
+"
+
+cmd=sh
+finder='echo $* | tr \  "" \\012' 
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd=cat ;;
+	x-x)	cmd=sh\ -x ;;
+	x-r)	finder='find $* -type f' ;;
+	x-u)	TOU=y ;;
+	x-l)	TOU=n ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+LOWER='abcdefghijklmnopqrstuvwxyz'
+UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+test X$TOU = X && case `basename $0` in
+*lower* ) TOU=n ;;
+*upper* ) TOU=y ;;
+esac
+
+test X$TOU = X && TOU=y
+if test X$TOU = Xy ; then
+	FROM=$LOWER
+	TO=$UPPER
+else
+	FROM=$UPPER
+	TO=$LOWER
+fi
+
+eval $finder | sed -e 's,/*$,,' -e '\,/,!s,^,./,' -e h -e 's,.*/,,' \
+                   -e "y/$FROM/$TO/" -e x -e G -e '\,^.*/\(.*\)\n\1,d' \
+		   -e 's,^\(.*/\)\(.*\)\n\(.*\)$,mv \1\2 \1\3,' | $cmd
+
+#exit 0
+exit

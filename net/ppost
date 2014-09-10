@@ -1,0 +1,119 @@
+#! /bin/sh
+
+# ppost -- process quoted messages (as in replying mail ou news)
+# 
+# $Id: ppost,v 1.1 1998/05/31 21:59:00 cdua Exp cdua $ 
+# Carlos Duarte, 980531
+
+#
+# this one, will format quoted input text
+# 
+# the format of input file should be 
+# 
+# 	quoted text
+# 	normal text
+# 	special text
+# 
+# mixed on all sorts of arrangements
+# 
+# quoted text, should be a line thats starts by any of >!|:
+# special text, is the text enclosed in !!, like
+# 	
+# 	!!
+# 	for i in *; 
+# 		do foo $i; 
+# 	done
+# 	!!
+# 
+# and normal text, is all other
+# 
+# blank lines are squeezed, i.e two or more are reduced to a single one
+# 
+# needs nroff
+# 
+
+sed '
+# 0: no fill
+# 1: filling
+# 2: no fill, literal
+
+s/$/\
+0/
+
+i\
+.pl 1\
+.hy 0\
+.nf\
+.ll 72
+
+: main
+
+s/\\/&e/g
+/^\./s/^/\\\&/
+
+/0$/b s0
+/1$/b s1
+/2$/b s2
+
+s/^.*\(.\)$/\
+some error - \1 - invalid state\
+/
+q
+
+##########
+:s0
+/^!!/{
+s/$/2/
+b next
+}
+/^[>|!:]/!{
+i\
+.fi
+s/.$/1/
+}
+b pnext
+
+##########
+:s1
+/^!!/{
+i\
+.nf
+s/$/2/
+b next
+}
+/^[>|!:]/{
+i\
+.nf
+s/.$/0/
+}
+b pnext
+
+##########
+:s2
+/^!!/{
+s/2$//
+/1$/i\
+.fi
+b next
+}
+b pnext
+
+##########
+:pnext
+/^\n/{
+x
+s/^/./
+x
+b next
+}
+x
+/./i\
+
+s/.*//
+x
+P
+:next
+$d 
+N
+s/^\(.*\)\(\n.*\)\n\(.*\)$/\3\2/
+b main' $* | nroff

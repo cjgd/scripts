@@ -1,0 +1,27 @@
+This is a collection of scripts, mainly in perl, sh, awk and sed.
+
+They are organized by functionality, but one can search for some
+families by its extension: 
+
+	find . -name \*.sed
+
+will give all sed scripts available.
+
+
+On INDEX, there is a description of all stuff.
+One can search there, to get hints for something, eg: I want
+to find script to convert from dos to unix: 
+
+	grep -i 'unix.*dos' INDEX
+convert/dos2unix.pl     convert a CRLF line ended filename to a LF one
+convert/fromdos         convert msdos EOL to unix
+
+
+Also, almost every files has somewhere in the beginning, something
+like:
+
+	name -- description
+
+and utils/get-desc.pl can be used to get a list of 'filename  description'
+automatically.
+

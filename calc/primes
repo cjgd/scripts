@@ -1,0 +1,73 @@
+#! /bin/sh
+
+# primes -- computes prime numbers
+# $Id: primes,v 1.2 1998/07/09 02:41:10 cdua Exp cdua $
+# Carlos Duarte, 971116/980709
+
+# usage: ./primes stop		- from 1 to stop
+#    or: ./primes start stop	- from start to stop
+
+case $# in 
+1) stop=$1 ;; 
+2) start=$1; stop=$2 ;;
+*) echo usage: $0 start stop
+   echo usage: $0 stop
+   exit 1
+   ;;
+esac
+
+: ${start=1}
+
+bc<<eof
+/* check if a is prime, caches primes on x, size z, 0 based; l: next to check */
+x[z++]= 2; x[z++]= 3; x[z++]= 5; x[z++]=7 ; x[z++]=11; x[z++]=13; 
+x[z++]=17; x[z++]=19; x[z++]=23; x[z++]=29; x[z++]=31; x[z++]=37; 
+x[z++]=41; x[z++]=43; x[z++]=47; x[z++]=53; x[z++]=59; x[z++]=61; 
+x[z++]=67; x[z++]=71; x[z++]=73; x[z++]=79; x[z++]=83; x[z++]=89; 
+x[z++]=97; x[z++]=101; 
+l=x[z-1]+2
+define p (a) {
+	while (a>l) {
+		if (p(l)) l += 0; /* to p(l) do not print */
+	}
+	/* use this, if input might be random 
+	if (a==l) { 
+		if (l%2==1)
+			l += 1; 
+		l += 1; 
+	}
+	*/ /* or this, is input is known to always be odd */
+	l += 2;
+	s = sqrt(a); 
+	for (i=0; i<z; i++) {	
+		if (x[i] > s) break; 
+		if (a%x[i] == 0) return (0); 
+	}
+	x[z++] = a; 
+	return (1); 
+}
+
+/* check if a is prime, simple algorithm */
+define q (a) {
+	s = sqrt(a); 
+	for (i=2; i<=s; i++)
+		if (a%i == 0) return (0); 
+	return (1); 
+}
+
+scale=0
+a=$start
+if (a<2) a=2  
+while (a<4) {
+	a++
+}
+if (a%2 == 0)
+	a += 1; 
+while (a <= $stop) {
+	if (p(a)) a
+	a += 2; 
+}
+quit
+eof
+
+exit

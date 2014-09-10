@@ -1,0 +1,28 @@
+#! /bin/sh
+
+# shared-sym -- fix symlinks of shared libs
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 990429
+
+
+# usage: share-sym libxxx.so.1.2.3
+# echo commands to do symlinks
+#	ln -s libxxx.so.1.2.3 libxxx.so.1
+#	ln -s libxxx.so.1 libxxx.so
+
+E=-e
+for i 
+do
+	case $i in 
+	lib*.so.[0-9].*)
+		a=`echo $i|cut -d. -f1-2`
+		b=`echo $i|cut -d. -f1-3`
+		;;
+	*)
+		continue
+		;;
+	esac
+	test $E $b || echo ln -s $i $b
+	test $E $a || echo ln -s $b $a
+
+done

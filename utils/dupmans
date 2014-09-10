@@ -1,0 +1,28 @@
+#! /bin/sh 
+
+# dupmans -- print duped man pages
+# $Id$
+# Carlos Duarte, 970425
+
+MP=`printenv MANPATH`
+if test X$MP = X; then
+	if man -w 2>/dev/null 1>&2; then 
+		MP=`man -w`
+	else
+		echo \
+"man must support -w option (or else, MANPATH must be defined)"
+		exit 1
+	fi
+fi
+
+for mandir in `echo $MP | tr : \\\\012 | sort -u`; do
+	test "`echo $mandir/man*`" = "$mandir/man*" && continue
+	dirs="$dirs `echo $mandir/man*`"
+done
+
+if test x"$dirs" = x ; then
+	echo "no dirs to check for"
+	exit 1
+fi
+
+dupfiles $dirs 

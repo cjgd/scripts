@@ -1,0 +1,44 @@
+#! /bin/sh 
+
+# any-to-au -- converts any sound format to AU (use sox)
+# Carlos Duarte <cgd@mail.teleweb.pt>, 991128
+
+tmp=/tmp/aa.$$.aiff
+trap "rm -f $tmp" EXIT SIGINT
+
+USAGE='
+	eval cat<<EOF
+usage: $0 [-h] [-n] files...
+
+  -h      this help
+  -n      no op
+EOF
+	exit 1
+'
+
+while : ; do
+	case x"$1" in 
+	x-h)	eval "$USAGE" ;;
+	x-n)	FAKE=yes ;;
+	x--)	shift; break ;;
+	x-*)	echo "invalid option -- `echo $1|cut -c2-`"
+		eval "$USAGE" ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+## if _must_ accept one extra argument after options
+test $# -eq 0 && eval "$USAGE" 
+
+## do rest of stuff with $*, if any 
+for i in "$@"; do
+	out="`echo \"$i\" | sed 's/\.[^.]*$//'`"
+	if test "x$FAKE" = xyes; then 
+		echo sox -t auto "$i" -c 1 $tmp
+		echo sox -t aiff $tmp -r 8000 -U -b "$out".au
+	else 
+		sox -t auto "$i" -c 1 $tmp
+		sox -t aiff $tmp -r 8000 -U -b "$out".au
+	fi
+done

@@ -1,0 +1,43 @@
+#! /bin/sh
+
+# small-wbanner -- display banner contents on a wide fashion
+# $Id$
+# Carlos Duarte, 960928/980802
+
+# usage: ./small-wbanner -rows message
+# eg:    ./small-wbanner -25 What a very long message this is ... 
+
+case "$1" in -*) W=`echo $1 | cut -c2-`; shift ;; esac
+: ${W=60}
+
+WS=`awk 'BEGIN{for(count='$W';count--;)printf "x"}'`
+
+banner -w$W $* | sed '
+1i\
+%[H%[J%['$W';1H
+
+s/^ *$/%[C/
+tn
+
+s/./&%[A%[D/g
+
+s/$/%['$W'B%[C/
+
+:n
+
+80,${
+i\
+%7%[1;1H%[P
+x
+s/.*/'$WS'/
+ta
+:a
+i\
+%[B%[P
+s/.//
+ta
+i\
+%8
+x
+}
+$s/$/%['$W';1H/' | tr -d '\n' | tr % '\033'

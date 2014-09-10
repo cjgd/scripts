@@ -1,0 +1,38 @@
+#! /bin/sh
+
+# wipe-links -- remove stale symbolic links
+# $Id: wipe-links,v 1.2 1998/07/10 19:16:47 cdua Exp cdua $
+# Carlos Duarte, 970922/980710
+
+# use test -e, which might not be available every where
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hn] dirs... files...
+
+  -h      this help
+  -n      no op
+
+works recursively
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	cmd=cat ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+find "$@" -type l \
+  | sed 's@.*@test -e & || rm &@' | ${cmd-sh}
+
+exit

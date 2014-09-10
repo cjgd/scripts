@@ -1,0 +1,53 @@
+#! /bin/sh
+
+# pow2 -- computes powers of 2 
+# $Id: pow2,v 1.3 1998/07/09 02:40:50 cdua Exp cdua $
+# Carlos Duarte, 960719/971116
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] first last 
+   or: $0      value
+
+  -h      this help
+
+    first form, computes powers in range [first, last]
+    second, only computes for given value
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+case $# in 
+1)	last=$1
+	first=$1
+	;;
+2)	first=$1
+	last=$2
+	;;
+*)	echo "$USAGE"; 
+	exit 1;
+	;;
+esac
+
+: ${first=1} ${last=20}
+
+bc << eof
+pow = 2 ^ $first
+for ( i = $first; i <= $last; i += 1 ) {
+	print "2^", i, " = ", pow, "\n"
+	pow = pow * 2
+}
+quit
+eof
+
+exit

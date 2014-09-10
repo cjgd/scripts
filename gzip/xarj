@@ -1,0 +1,82 @@
+#! /bin/sh
+
+# xarj -- decompresses several arj archive, and support multivolume ones
+# $Id: xarj,v 1.3 1998/07/09 22:25:03 cdua Exp cdua $
+# Carlos Duarte, 960814
+
+#
+# usage is xarj *.a[0-9][0-9] *.arj
+# 
+# the directory on which extraction is done should be empty, or 
+# contain only files starting with . 
+# 
+# a subdir .z is created and removed at the end of the job
+# 
+# a typical usage is
+# 
+# 	mkdir z && cd z && tar xf /dev/rmt 
+# 
+# 	-- z contains now *.arj *.a[0-9][0-9]
+# 
+# 	cd .. 
+# 
+# 	mkdir x && cd x && xarj ../z/*
+# 
+# 	-- x now contains all extracted files from arj archives
+# 
+# 
+# beware on systems that contain ZLIBC working, to disable it for
+# shell, if not the expansion of *.gz will not be correct
+# 
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] archive...
+
+  -h      this help
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+SUBDIR=.z
+TEMPFILE=/tmp/unarj$$
+
+test -d $SUBDIR || mkdir $SUBDIR
+
+set -- `echo $* \
+	| tr ' ' \\012 \
+	| sed 's/\.arj$/\.000/' \
+	| sort \
+	| sed 's/\.000$/\.arj/'`
+
+for f
+do
+	unarj x $f 
+	for i in *; do
+		if test -f $SUBDIR/$i; then
+			cat $SUBDIR/$i $i > $TEMPFILE
+			rm $i $SUBDIR/$i
+			mv $TEMPFILE $SUBDIR/$i
+		fi
+	done
+	mv * $SUBDIR
+	shift
+done
+
+mv $SUBDIR/* . && rmdir $SUBDIR
+
+#exit 0
+exit

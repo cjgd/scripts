@@ -1,0 +1,76 @@
+#! /bin/sh
+
+# time-cmd -- measure the time taken by a given command
+# $Id: time-cmd,v 1.1 1998/09/06 16:47:18 cdua Exp cdua $
+# Carlos Duarte, 980708
+
+count=10
+USAGE="\
+usage: $0 [-h] [-#] command switches args... 
+
+  -h      this help
+  -#      number of repetitions to do (default: $count)
+
+examples: $0 ./app
+          $0 -12 ./app2
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-[0-9]*)
+		count=`echo $1|cut -c2-`
+		;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept one extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+cmd="$1"
+shift
+
+# these will do the whole job with awk per se
+awk 'BEGIN {
+	cmd = "'"$cmd"'"
+	args = "'"$*"'"
+	count = '"$count"'
+	for (n=1; n<=count; n++) {
+		mycmd =  "time " cmd " " args " 2>&1 1>/dev/null"
+		mycmd | getline xx
+		split(xx, a)
+		sub("user", "", a[1])
+		sub("system", "", a[2])
+		tot += 0+a[1]+a[2]
+		printf "[%d] %s %-33s: %f           \r", n, cmd, args, tot/n
+		close(mycmd)
+	}
+	print ""
+}'
+
+## those, will split the job into awk+sh+awk
+#awk -v cmd="$cmd" -v args="$@" -v count="$count" '
+#BEGIN {
+#	print "exec 2>&1"
+#	print "exec 1>/dev/null"
+#	while (count-- >0)
+#		print "time " cmd " " args 
+#}' | sh | awk -v cmd="$cmd" -v args="$@" '
+#{
+#	sub("user", "", $1)
+#	sub("system", "", $2)
+#	tot += 0+$1+$2
+#	n++
+#	printf "%s %-33s: %f           \r", cmd, args, tot/n
+#	fflush()
+#}
+#END {
+#	print ""
+#}'
+
+exit

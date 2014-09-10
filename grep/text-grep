@@ -1,0 +1,38 @@
+#! /bin/sh 
+
+# text-grep -- perform grep on text files
+# $Id: text-grep,v 1.1 1998/07/09 02:46:01 cdua Exp cdua $
+# Carlos Duarte, 980707
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] pattern files...
+
+  -h      this help
+  -L      follow symlinks
+
+  perform grep of pattern in specified files (- for stdin)
+  all other options are passed to grep
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-L)	L=-L ;;
+	x--)	shift; break ;;
+	x-?)	p="$p $1" ;; 
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -lt 2; then echo "$USAGE"; exit 1; fi
+
+p="$p $1"
+shift
+
+file $L "$@" | grep ':.*text' | cut -d: -f1 | xargs grep $p
+exit 
+

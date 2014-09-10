@@ -1,0 +1,208 @@
+#! /bin/sh 
+
+# makediffs -- create a shell script to recreate dir2, given dir1
+#
+# $Id: makediffs,v 2.1 1997/09/10 06:30:41 cdua Exp cdua $
+# Carlos Duarte, 970901
+
+checkdir() {
+	if test -d $1 ; then 
+		: 
+	else
+		echo $1: can not access $1 as a directory...
+		exit 1
+	fi
+	case $1 in /*) 
+		echo $1: must be relative directory... 
+		exit 1
+		;;
+	esac
+}
+
+unsupported() {
+cat <<\EOF
+One of the given dirs contains files with spaces ( ) or colons (:).
+makediffs does not support thoses files, because: 
+  - files with colon messes around with output of the file(1) command
+  - files with spaces messes around with general sh processing
+
+EOF
+	exit 1
+}
+
+DIFF="diff -c"
+
+# args
+if test $# -ne 2; then 
+	echo usage : $0 old-dir new-dir
+	echo
+	echo \  writes diff script to output
+	exit 1
+fi
+
+old=$1
+new=$2
+cur=`pwd`
+
+checkdir $old
+checkdir $new
+
+wdir=/tmp/zmd%$$
+i=1
+while test -d $wdir.$i
+do
+	i=`expr $i + 1`
+done
+
+wdir=$wdir.$i
+mkdir $wdir
+
+cd $cur/$old && find . \( -type d -fprint $wdir/o.d \) -o -fprint $wdir/o.f
+cd $cur/$new && find . \( -type d -fprint $wdir/n.d \) -o -fprint $wdir/n.f
+
+grep '[: ]' $wdir/* >/dev/null && unsupported 
+
+cd $cur/$old && xargs -r file < $wdir/o.f > $wdir/ff.o
+cd $cur/$new && xargs -r file < $wdir/n.f > $wdir/ff.n
+
+cd $wdir
+sed '/^[^:]*:.*text.*$/ d; s/:.*$//' < ff.o | sort > special.old
+sed '/^[^:]*:.*text.*$/ d; s/:.*$//' < ff.n | sort > special.new
+
+sed '/^[^:]*:.*text.*$/!d; s/:.*$//' < ff.o | sort > text.old
+sed '/^[^:]*:.*text.*$/!d; s/:.*$//' < ff.n | sort > text.new
+
+cat<< EOF
+#! /bin/sh
+#
+# This is a script produced by $0 shell script. 
+# cd into original package ($old) and run it. 
+# 
+# Some sanity checks will be made.
+
+# Sanity check... 
+EOF
+D1=`sed -n 2p o.d`
+D2=`sed -n 4p o.d`
+F1=`sed -n 1p o.f`
+F2=`sed -n 3p o.f`
+echo 'if test x = x \'
+test x$D1 != x && echo \&\& test -d $D1 \\
+test x$D2 != x && echo \&\& test -d $D2 \\
+test x$F1 != x && echo \&\& test -f $F1 \\
+test x$F2 != x && echo \&\& test -f $F2 \\
+cat << EOF
+; then 
+	:
+else
+	echo 'You should run this script on original directory ($old ?)...'
+	exit 1
+fi
+
+# extra files...
+xargs -r rm -f << \XARGS_EOF
+EOF
+
+diff special.old special.new | sed -n '
+/^< /s/^..//p
+/^> /s/^..//w ftar
+'
+
+diff text.old text.new | sed -n '
+/^< /s/^..//p
+/^> /s:^..\(.*\):/dev/null \1:w fnew
+'
+
+echo 'XARGS_EOF'
+
+echo '# directories to remove'
+echo 'xargs -r rmdir << \XARGS_EOF'
+sort -o o.d o.d
+sort -o n.d n.d
+diff o.d n.d | sed -n '
+/^< /s/^..//p
+/^> /s/^..//w mkd
+' | sort -r
+
+echo 'XARGS_EOF'
+
+# here: 
+# 	$wdir/mkd	contain dirs to make, one per line
+# 	$wdir/fnew	files to creat, format: "/dev/null file" 
+# 	$wdir/ftar	file to make thru tar
+
+echo '# new directories'
+echo 'xargs -r mkdir << \XARGS_EOF'
+cat mkd
+echo 'XARGS_EOF'
+
+sort text.old text.new \
+  | uniq -d \
+  | sed 's:.*:& &:' >> fnew
+
+cd $cur
+
+echo '# extra file deletions' 
+echo 'xargs -r rm -f << \XARGS_EOF'
+
+touch $wdir/p.0
+i=0
+cat $wdir/fnew | while read oo nn ; do 
+
+	if test $oo = "/dev/null"; then
+		i=`expr $i + 1`
+		$DIFF /dev/null $new/$nn  > $wdir/p.$i
+		continue
+	fi
+
+	if cmp $old/$oo $new/$nn >/dev/null; then
+		continue
+	fi
+		
+	i=`expr $i + 1`
+	$DIFF $old/$oo $new/$nn > $wdir/p.$i
+
+	if test `wc -c < $wdir/p.$i` -gt `wc -c < $new/$nn`; then
+		echo $oo
+		$DIFF /dev/null $new/$nn > $wdir/p.$i
+	fi
+done
+
+echo 'XARGS_EOF'
+echo 'patch -p1 << \PATCH_EOF'
+cat $wdir/p.*
+echo 'PATCH_EOF'
+
+cd $wdir
+sort special.old special.new | uniq -d | while read f; do
+	if test -f $cur/$old/$f && \
+	   test -f $cur/$new/$f && \
+	   cmp $cur/$old/$f $cur/$new/$f >/dev/null; then
+		: 
+	else
+		echo $f >> ftar
+	fi
+done
+
+cd $cur/$new 
+if test -s $wdir/ftar; then
+	tar cf $wdir/t.tar `sed 1q $wdir/ftar`
+	sed 1d $wdir/ftar | xargs -r tar rf $wdir/t.tar 
+
+	cat << \EOF
+C=`sed '/^## START OF TAR DATA ##/q' $0 | wc -c `
+C=`expr $C + 0`
+dd if=$0 of=/tmp/md.$$.dm bs=$C skip=1 2>/dev/null
+tar xf /tmp/md.$$.dm
+rm -f /tmp/md.$$.dm
+exit 
+## START OF TAR DATA ## 
+EOF
+	cat $wdir/t.tar
+else
+	echo exit
+fi
+
+rm -rf $wdir
+exit 0
+

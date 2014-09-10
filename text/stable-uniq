@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# stable-uniq -- remove duped lines, but keep their order 
+# $Id$
+# Carlos Duarte, 970426/980709
+
+# some equivalent forms... 
+awk '!x[$0]++' $*
+#cat -n $* | sort '-t	' +1 -u | uniq -f 1 | sort | cut -c 8-
+#grep -n ^ $* | sort -t: +1 -u | sort +0n -1 | cut -d: -f2-

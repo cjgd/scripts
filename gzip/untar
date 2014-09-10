@@ -1,0 +1,258 @@
+#! /bin/sh
+
+# untar -- unpack several archives files
+# 
+# $Id: untar,v 1.16 1998/07/09 22:26:03 cdua Exp cdua $
+# Carlos Duarte, 960918/020410
+
+# usage: untar *.tar.gz *.tar *.cpio *.shar *.sh ...
+# 
+# the purpose of this one, is to extract all files of several archives
+# (zip, tar, ...)  and check if that archive outputs all its files into a
+# common subdir (most common cases), or if several files and directories
+# are extracted directly to current dir
+#
+# on first case, the main dir is kepted as a subdir of current directory,
+# on second, an user supplied name is used as the future main dir of
+# the package
+# 
+# example: 
+# 
+# suppose 1.tar contains: 
+# 
+# 	1/foo
+# 	1/bar
+# 	1/x
+# 	1/y
+# 	1/...
+# 
+# and 2.tar contains: 
+# 
+# 	a1
+# 	a2
+# 	a3
+# 	a4
+# 	b/z1
+# 	b/z2
+# 	...
+# 
+# then
+# 	untar 1.tar 2.tar
+# 
+# will extract all files of 1.tar normally, for 2.tar, it will ask user
+# for a directory
+# 
+# then, all files contained on 2.tar will be descendants of that user
+# supplied dir
+# 
+
+# todo: 
+#  . cleanup?? 
+#  . use file(1) to really do autodetection
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-h] [-rm] [-shar] [-cpio] [-tar] [-zip] *.tar *.cpio ... 
+
+  -h      this help
+  -rm     delete archive, after extracting it
+  -shar, -cpio, -tar, -zip, -lha
+          force all archives to be of this type
+          usually they will be autodetected by extension
+
+Unpack all files of an archive into a common directory.
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-rm)	DODEL=yes ;;
+	x-shar | x-cpio | x-tar | x-zip | x-lha )
+		FORCE_ARCH=".`echo \"$1\" | cut -c2- `" ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+# if _must_ accept on extra argument after options
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+
+# define fn lsA to do a ls of all files except `.' `..'
+if ls -A 2>&1 1>/dev/null; then
+	lsA() {
+		ls -A1 $*
+	}
+else
+	lsA() {
+		ls -a $* | sed '/^\.$/d; /^\.\.$/d'
+	}
+fi
+
+tmp_dir=z$$
+n=0
+#while test -L $tmp_dir || test -e $tmp_dir
+while ls -d $tmp_dir 2>/dev/null 1>/dev/null; do
+	n=`expr $n + 1`
+	tmp_dir=z$$_$n
+done
+
+mkdir $tmp_dir && cd $tmp_dir
+
+for f 
+do
+	way="../"
+	case $f in /*) way="" ;; esac
+	test -f "$way$f" || continue
+
+	# compressor...
+	case $f in 
+	*.bz2 | *.bzip2 | *.tbz2 )
+		BLOW=bzip2\ -dc ;;
+	*.Z | *.gz | *.taz | *.tgz | *.tar.z )
+		BLOW=gzip\ -dc ;;
+	*.lzma )
+		BLOW=lzma\ -dc ;;
+	*.tlz | *.lz )
+		BLOW=lzip\ -dc ;;
+	* )
+		BLOW=cat ;;
+	esac
+
+	# archiver...
+	# if FORCE_ARCH is not null, fake filename with it, that way
+	#   xpto.foo can be forced to be a shar archive
+	ARCH="$f"
+	test x"$FORCE_ARCH" != x"" && ARCH="$FORCE_ARCH"
+	case "$ARCH" in
+	*.tar | *.tar.* | *.taz | *.tgz | *.tbz* | *.tlz )
+		if test "$BLOW" = "cat"; then 
+			tar xf "$way$f"
+		else
+			$BLOW "$way$f" | tar xf - 
+		fi ;;
+	*.cpio | *.cpio.* )
+		$BLOW "$way$f" | cpio -id ;;
+	*.sh | *.shar | *.sh.* | *.shar.* )
+		$BLOW "$way$f" | sed '
+			/^#!/bb
+			/^:/bb
+			d
+			:b
+			n
+			bb' > xx.$$.sh
+		if test -s xx.$$.sh; then 
+			: 
+		else
+			$BLOW "$way$f" > xx.$$.sh
+		fi
+		sed '
+			s/\<chdir\>/cd/g
+			/wc/!b
+			/if.*test.*wc.*-c/!b
+			/wc.*-c.*<.*$/b
+			s/\<wc.*-c/&</
+		' xx.$$.sh | sh 
+		rm -f xx.$$.sh
+		;;
+	*.zip | *.ZIP )
+		unzip "$way$f"
+		;;
+	*.zip.* | *.ZIP.* ) 
+		$BLOW "$way$f" > xx.$$.zip
+		unzip xx.$$.zip
+		rm -f xx.$$.zip
+		;;
+	*.7z | *.7Z ) 
+		7z x "$way$f" 
+		;;
+	*.rar | *.RAR ) 
+		rar x "$way$f" 
+		;;
+	*.rar.* | *.RAR.* ) 
+		$BLOW "$way$f" > xx.$$.rar
+		rar x xx.$$.rar
+		rm -f xx.$$.rar
+		;;
+	*.jar | *.war | *.ear ) 
+		if test "$BLOW" = "cat"; then 
+			jar xf "$way$f"
+		else
+			$BLOW "$way$f" > xx.$$.jar
+			jar xf xx.$$.jar
+			rm -f xx.$$.jar
+		fi ;;
+	*.lha | *.lha.* | *.LHA | *.LHA.* | \
+	*.lzh | *.lzh.* | *.LZH | *.LZH.* ) 
+		if test "$BLOW" = "cat"; then 
+			lha x "$way$f"
+		else
+			$BLOW "$way$f" > xx.$$.lha
+			lha x xx.$$.lha
+			rm -f xx.$$.lha
+		fi ;;
+	*.cab )
+		cabextract "$way$f"
+		;;
+
+	* )
+		# didnt do anything on this one, so go to next... 
+		echo "$f: did not recognize extension, skipping... " 
+		continue ;;
+	esac
+
+	if test `lsA | wc -l` -eq 1 && test -d "`lsA`"
+	then
+		this_dir=`lsA`
+		n=
+		m=
+		#while test -L ../$this_dir$m$n || test -e ../$this_dir$m$n 
+		while ls -d ../$this_dir$m$n 2>/dev/null 1>/dev/null 
+		do 
+			oldn="$n"
+			oldm="$m"
+			m="."
+			test "$n"xx = xx && n=0
+			n=`expr $n + 1`
+			echo \
+"sorry, ${this_dir}${oldm}${oldn} already exist, trying ${this_dir}${m}${n}..."
+		done
+		if test x$n = x ; then
+			mv "$this_dir" ..
+		else 
+			mv "$this_dir" "../$this_dir$m$n"
+		fi
+	else
+		while : ; do 
+			def_base_dir=`echo $f|sed 's/^.*\///; s/\..*$//'`
+			echo -n "base dir for $f [$def_base_dir]: "
+			read base_dir foo 
+			test x"$base_dir" = x && base_dir="$def_base_dir"
+			if test x"$base_dir" = x; then	
+				echo please, write something
+				continue
+			fi
+			#if test -L ../$base_dir || test -e ../$base_dir
+			if ls -d ../$base_dir 2>/dev/null 1>/dev/null
+			then
+				echo sorry, $base_dir already exist...
+				continue
+			fi
+			break
+		done
+
+		cd ..
+		mv "$tmp_dir" "$base_dir"
+		base_dir=
+		mkdir "$tmp_dir" && cd "$tmp_dir"
+	fi
+
+	test x$DODEL != x && rm -f ../$f
+done
+
+cd ..
+rmdir $tmp_dir
+exit

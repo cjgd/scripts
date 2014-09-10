@@ -1,0 +1,40 @@
+#! /bin/sh 
+
+# term-names -- keep a list of wanted term-types, to pass to t-update
+# $Id$
+# Carlos Duarte, 960929
+
+sed -n '1,/^########/b;/^ *#/d;s/#.*$//;p' $0 | \
+	xargs t-update -f terminfo.src.gz
+
+exit 0
+
+######## START LIST OF TERM NAMES
+
+dumb
+unknown
+other
+#lpr
+linux
+linux-nic
+#vt100
+#vt100nam
+#vt100-w
+#vt100-w-nam
+#vt100-s
+#vt100-s-bot
+#vt100-avo
+#vt102
+#vt102-nsgr
+#vt125
+#vt132
+#vt220
+#vt220d
+#vt220-8
+#screen
+#screen-w
+
+# these are new from 9.8.1 to 9.13.0, and are USEd from linux
+klone+sgr
+klone+color
+klone+acs

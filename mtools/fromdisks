@@ -1,0 +1,79 @@
+#! /bin/sh
+
+# fromdisks -- copy files several disks into separated directories
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 961218/980803
+
+USAGE="\
+usage: $0 [-h] [-n] [-d drives] [-rm] <ndisks>
+
+  -h          this help
+  -n          no op
+  -d drive    specify initial drive, or drives
+  -rm         remove contents of disks, after copying
+  <ndisks>    number of disks to copy
+
+eg: $0 -d ab 5      
+         copy contents of disks A: B: A: B: A:, to dirs 1, 2, 3, 4, 5
+    $0 -rm -d a 3   
+	 copy contents of three disks on A:, and erase them, after the copy
+"
+
+FAKE=
+DRIVES=A
+MDEL=:
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	FAKE=echo ;;
+	x-d)
+		DRIVES=`echo $1|cut -c3-`
+		if test x"$DRIVES" = x; then
+			shift
+			DRIVES=$1
+		fi
+		;; 
+	x-rm)	MDEL=mdel ;;
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+if test $# -ne 1; then echo "$USAGE"; exit 1; fi
+
+ndisks=$1
+n=0
+dir=1
+
+while test $n -lt $ndisks; do
+	while test -d $dir || test -f $dir; do
+		dir=`expr $dir + 1`
+	done
+
+	drive=`echo $DRIVES|sed 's/^\(.\).*$/\1/'`
+
+	n=`expr $n + 1`
+	if test $n -eq 1; then 
+		echo Insert disk on drive $drive and press return...
+		read ans || break
+	fi
+
+	echo Copying disk$n to $dir ... 
+	$FAKE mkdir $dir && \
+	$FAKE mcopy $drive:\* $dir && \
+	$FAKE $MDEL $drive:\*
+
+	ODRIVES=$DRIVES
+	DRIVES=`echo $DRIVES|sed 's/^\(.\)\(.*\)$/\2\1/'`
+
+	if test $DRIVES = $ODRIVES && test $n -ne $ndisks; then 
+		echo Replace disk and press return...
+		read ans || break
+	fi
+	dir=`expr $dir + 1`
+done
+
+exit 0

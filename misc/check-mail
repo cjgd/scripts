@@ -1,0 +1,49 @@
+#! /bin/sh
+
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 981229
+
+# usage: check-mail user
+#    or: check-mail user-mail-file
+#
+#    or: check-mail -d user; # to enter in background
+#
+
+if test "x$1" = "x-d"; then daemon=on; shift; fi
+if test "x$1" = "x-dd"; then check=on; shift; fi
+	
+if test x$daemon != x; then
+	sh -c "exec $0 -dd $*&"
+	exit
+fi
+
+if test x$check != x; then
+	while :; do 
+		$0 $*
+		sleep 30
+	done
+fi
+
+for i
+do
+	u=$i
+	case $u in 
+	*/*) 
+		file=$u 
+		;; 
+	*) 
+		## choose your weapons...
+		#file=/var/mail/`echo $u|cut -c1`/`echo $u|cut -c2`/$u 
+		#file=/var/spool/mail/$u
+		file=/var/mail/$u
+		;;
+	esac
+	#echo $file
+	test -s $file || continue
+	perl -e '
+		@xx = stat("'"$file"'"); 
+		($xx[9] > $xx[8]) && exit(0); 
+		exit(1);
+	' && sh -c exec\ xmessage\ "$u have new mail."\&
+done
+

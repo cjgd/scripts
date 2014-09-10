@@ -1,0 +1,23 @@
+#! /bin/sh 
+
+# sendmail.restart -- restarts sendmail ... 
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 981223
+
+case `uname | tr A-Z a-z` in
+linux*)	PID=/var/run/sendmail.pid ;;
+irix*)	PID=/etc/sendmail.pid ;;
+esac
+
+if test "$PID" = ""; then
+	echo "What is this system?"
+	exit
+fi
+
+if test -f $PID; then : ; else
+	echo "Where is sendmail.pid?"
+	exit
+fi
+
+sed '1s/^/kill /' $PID | sh 
+

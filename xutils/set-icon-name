@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# set-icon-name -- sets icon on a xterm compliant terminal 
+# $Id$
+# Carlos Duarte <cgd@mail.teleweb.pt>, 981231
+
+NUM=0
+while :; do
+	case x"$1" in
+	x-icon) NUM=1 ;;
+	x-title) NUM=2 ;;
+	x*) break ;;
+	esac
+	shift
+done
+
+ESC=`echo x| tr x \\\\033`
+BEL=`echo x| tr x \\\\007`
+test $NUM -eq 0 && NUM="1 2"
+for NUM in $NUM; do echo "$ESC]$NUM;$*$BEL" | tr -d \\012; done
+

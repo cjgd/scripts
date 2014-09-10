@@ -1,0 +1,61 @@
+#! /bin/sh
+
+# apply-sed -- apply sed to each input line, replacing it per result
+# $Id: apply-sed,v 1.1 1998/09/06 23:18:35 cdua Exp cdua $
+# Carlos Duarte, 980802
+
+#trap -- 'rm -f /tmp/xpto' EXIT SIGINT
+
+USAGE="\
+usage: $0 [-hn] [-i[xxx]] { -e line -f file ... | 'script' } input
+
+  -h         this help
+  -e line    line is added to the script
+  -f file    file contents are added to script
+  -i[xxx]    keep backup of original file into file.xxx (xxx defaults to bak)
+  'script'   specify the whole script, do not coexist with -e or -f
+
+aplly sed to each input file, replacing it by the resulting output
+of _each_ one
+"
+
+while : ; do
+	case x"$1" in 
+	x-h)	echo "$USAGE"; exit 1 ;;
+	x-n)	N=-n ;;
+	x-e)	S="$S -e '$2'"; shift ;;
+	x-f) 	S="$S -f '$2'"; shift ;;
+	x-i)	BAK=`echo $1|cut -c2-` 
+		test x"$BAK" = x && BAK=bak
+		;; 
+	x--)	shift; break ;;
+	x-?)	echo "invalid option -- `echo $1|cut -c2-`"
+		echo "$USAGE"; exit 1 ;;
+	*)	break ;;
+	esac
+	shift
+done
+
+if test "$S"x = x ; then
+	if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+	S="'$1'"
+	shift
+fi
+
+temp=/tmp/apsd.$$.
+v=1
+while test -f $temp$v || test -f $temp$v; do
+	v=`expr $v + 1`
+done
+temp=$temp$v
+
+if test $# -eq 0; then echo "$USAGE"; exit 1; fi
+for file
+do
+	if eval sed $N "$S" < $file > $temp; then 
+		test x"$BAK" != x && mv $file $file$BAK
+		mv -f $temp $file
+	else
+		rm -f $temp
+	fi
+done

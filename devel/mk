@@ -1,0 +1,12 @@
+#! /bin/sh 
+
+# mk -- wrapper for make: seaches for a Makefile downside along path, and use 
+#	it if available
+#
+# Carlos Duarte, 020318
+
+test -f Makefile && exec make "$@"
+for i in .. ../.. ../../..; do 
+	test -f $i/Makefile || continue
+	exec make -C $i "$@"
+done
